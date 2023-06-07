@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -136,9 +137,16 @@ func createPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get selected categories
+	categories := r.Form["checkboxes"]
+
+	// Convert categories to a comma-separated string
+	categoriesString := strings.Join(categories, ",")
+	fmt.Printf("Post categories: %s\n", categoriesString)
+
 	dateCreated := time.Now()
 
-	_, err = db.Exec("INSERT INTO posts (title, content, created_at) VALUES (?, ?, ?)", titleContent, postContent, dateCreated)
+	_, err = db.Exec("INSERT INTO posts (title, content, category_id, created_at) VALUES (?, ?, ?, ?)", titleContent, postContent, categoriesString, dateCreated)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Could not create post", http.StatusInternalServerError)
@@ -163,10 +171,8 @@ func main() {
 
 	http.HandleFunc("/register", registerHandler)
 	http.HandleFunc("/login", loginHandler)
-	// http.HandleFunc("/set-session-cookie", setSessionCookieHandler)
 	http.HandleFunc("/", homeHandler)
 	http.HandleFunc("/create-post", createPostHandler)
-	// http.HandleFunc("/login.html", formHandler)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
