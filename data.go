@@ -67,9 +67,9 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Please fill out all fields - we need to create a form here", http.StatusBadRequest)
 		return
 	}
-	var storedPassword []byte //holds the hashed password from the database
+	var storedPassword []byte // holds the hashed password from the database
 	err = db.QueryRow("SELECT password FROM users WHERE email = ?", email).Scan(&storedPassword)
-	if err != nil { //above fetches hashed password from users table in database.
+	if err != nil {
 		if err == sql.ErrNoRows {
 			http.Error(w, "No user found with this email", http.StatusUnauthorized)
 		} else {
@@ -79,14 +79,13 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// func comparing hashed password against the database
 	err = bcrypt.CompareHashAndPassword(storedPassword, []byte(password))
 	if err != nil {
 		http.Error(w, "Incorrect password", http.StatusUnauthorized)
 		return
 	}
 
-	// set browser cookies to store login
+	// Set browser cookies to store login
 	http.SetCookie(w, &http.Cookie{
 		Name:  "user",
 		Value: email,
@@ -99,48 +98,45 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	cookie := http.Cookie{
 		Name:    "session",
 		Value:   sessionID,
-		Expires: time.Now().Add(300 * time.Second), // Set the expiration time for the cookie
-		Path:    "/",                               // Set the cookie path to '/' to make it available for all paths
+		Expires: time.Now().Add(300 * time.Second),
+		Path:    "/",
 	}
 
 	// Set the cookie in the response headers
 	http.SetCookie(w, &cookie)
 
-	// Write a response to indicate the cookie has been set
-	fmt.Println(w, "Session cookie set! Logged in")
+	// Redirect the user to the homepage
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 // serve homepage
 func homeHandler(w http.ResponseWriter, r *http.Request) {
-	filePath := r.URL.Path[1:]
-	// check for correct file path
-	fmt.Println("File Path:", filePath)
 	http.ServeFile(w, r, "home.html")
 }
 
-// serve create post page
+// serve and create post page
 func createPostHandler(w http.ResponseWriter, r *http.Request) {
-	// serve create post page
-	filePath := r.URL.Path[1:]
-	// check for correct file path
-	fmt.Println("File Path:", filePath)
-	http.ServeFile(w, r, "createPost.html")
+	if r.Method == http.MethodGet {
+		// Serve create post page
+		http.ServeFile(w, r, "createPost.html")
+		return
+	}
 
 	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, "Could not parse form", http.StatusBadRequest)
+		return
+	}
 
-	// save post form details and store in database
 	titleContent := r.Form.Get("postTitle")
 	postContent := r.Form.Get("postContent")
-	dateCreated := time.Now()
 
-	// email := r.Form.Get("email")
-	// username := r.Form.Get("username")
-	// password := r.Form.Get("password")
-
-	if titleContent == "" || postContent == "" { //checking if any of these fields aee empty
+	if titleContent == "" || postContent == "" {
 		fmt.Fprintln(w, "Error - please ensure fields aren't empty!")
 		return
 	}
+
+	dateCreated := time.Now()
 
 	_, err = db.Exec("INSERT INTO posts (title, content, created_at) VALUES (?, ?, ?)", titleContent, postContent, dateCreated)
 	if err != nil {
@@ -150,6 +146,9 @@ func createPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Println("Post successfully created!")
+
+	// Redirect the user to the homepage
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func main() {
