@@ -14,6 +14,7 @@ import (
 
 var db *sql.DB
 
+// handle registration
 func registerHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		http.ServeFile(w, r, "register.html")
@@ -48,6 +49,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "User registered")
 }
 
+// handle login + session cookies
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		http.ServeFile(w, r, "login.html")
@@ -105,18 +107,49 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &cookie)
 
 	// Write a response to indicate the cookie has been set
-	fmt.Fprintln(w, "Session cookie set! ")
-
-	fmt.Fprintln(w, "Logged in")
+	fmt.Println(w, "Session cookie set! Logged in")
 }
 
-func formHandler(w http.ResponseWriter, r *http.Request) {
+// serve homepage
+func homeHandler(w http.ResponseWriter, r *http.Request) {
 	filePath := r.URL.Path[1:]
-	http.ServeFile(w, r, "home.html")
-
 	// check for correct file path
 	fmt.Println("File Path:", filePath)
-	//http.FileServer(http.Dir("")).ServeHTTP(w, r)
+	http.ServeFile(w, r, "home.html")
+}
+
+// serve create post page
+func createPostHandler(w http.ResponseWriter, r *http.Request) {
+	// serve create post page
+	filePath := r.URL.Path[1:]
+	// check for correct file path
+	fmt.Println("File Path:", filePath)
+	http.ServeFile(w, r, "createPost.html")
+
+	err := r.ParseForm()
+
+	// save post form details and store in database
+	titleContent := r.Form.Get("postTitle")
+	postContent := r.Form.Get("postContent")
+	dateCreated := time.Now()
+
+	// email := r.Form.Get("email")
+	// username := r.Form.Get("username")
+	// password := r.Form.Get("password")
+
+	if titleContent == "" || postContent == "" { //checking if any of these fields aee empty
+		fmt.Fprintln(w, "Error - please ensure fields aren't empty!")
+		return
+	}
+
+	_, err = db.Exec("INSERT INTO posts (title, content, created_at) VALUES (?, ?, ?)", titleContent, postContent, dateCreated)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Could not create post", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Println("Post successfully created!")
 }
 
 func main() {
@@ -132,7 +165,8 @@ func main() {
 	http.HandleFunc("/register", registerHandler)
 	http.HandleFunc("/login", loginHandler)
 	// http.HandleFunc("/set-session-cookie", setSessionCookieHandler)
-	http.HandleFunc("/", formHandler)
+	http.HandleFunc("/", homeHandler)
+	http.HandleFunc("/create-post", createPostHandler)
 	// http.HandleFunc("/login.html", formHandler)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
