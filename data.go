@@ -16,13 +16,15 @@ import (
 
 var db *sql.DB
 
-// struct for posts
+// struct for individual posts
 type Post struct {
 	// ID      int
 	Title   string
 	Content string
+	Time    string
 }
 
+// struct for posts
 type HomePageData struct {
 	Posts []Post
 }
@@ -124,7 +126,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 // show posts on homepage
 func executePosts() ([]Post, error) {
-	rows, err := db.Query("SELECT title, content FROM posts")
+	rows, err := db.Query("SELECT title, content, created_at FROM posts")
 	if err != nil {
 		return nil, err
 	}
@@ -133,10 +135,16 @@ func executePosts() ([]Post, error) {
 	var posts []Post
 	for rows.Next() {
 		var post Post
-		err := rows.Scan(&post.Title, &post.Content)
+		err := rows.Scan(&post.Title, &post.Content, &post.Time)
 		if err != nil {
 			return nil, err
 		}
+		// Format the datetime string
+		t, err := time.Parse("2006-01-02T15:04:05.999999999-07:00", post.Time)
+		if err != nil {
+			return nil, err
+		}
+		post.Time = t.Format("January 2, 2006, 15:04:05")
 		posts = append(posts, post)
 	}
 
