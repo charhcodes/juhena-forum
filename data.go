@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"strings"
@@ -14,6 +15,13 @@ import (
 )
 
 var db *sql.DB
+
+// struct for posts
+type Post struct {
+	// ID      int
+	Title   string
+	Content string
+}
 
 // handle registration
 func registerHandler(w http.ResponseWriter, r *http.Request) {
@@ -110,9 +118,50 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
+// show posts on homepage
+func executePosts() ([]Post, error) {
+	rows, err := db.Query("SELECT title, content FROM posts")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var posts []Post
+	for rows.Next() {
+		var post Post
+		err := rows.Scan(&post.Title, &post.Content)
+		if err != nil {
+			return nil, err
+		}
+		posts = append(posts, post)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return posts, nil
+}
+
 // serve homepage
 func homeHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "home.html")
+	posts, err := executePosts()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	tmpl, err := template.ParseFiles("home.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = tmpl.Execute(w, posts)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 // serve and create post page
