@@ -23,6 +23,10 @@ type Post struct {
 	Content string
 }
 
+type HomePageData struct {
+	Posts []Post
+}
+
 // handle registration
 func registerHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
@@ -151,13 +155,17 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	data := HomePageData{
+		Posts: posts,
+	}
+
 	tmpl, err := template.ParseFiles("home.html")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err = tmpl.Execute(w, posts)
+	err = tmpl.Execute(w, data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

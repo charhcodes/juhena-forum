@@ -31,7 +31,13 @@
         </div>
         <!--differentiate between post title and post body, and separate posts-->
         <div class="posts">
-            {{.}}
+            {{range .Posts}}
+                <div class="post">
+                    <h3>{{.Title}}</h3>
+                    <p>{{.Content}}</p>
+                    <br>
+                </div>
+            {{end}}
         </div>
     </body>
 </html>
