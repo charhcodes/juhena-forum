@@ -14,6 +14,7 @@
                 <button class="register-button">Register</button>
             </form>
         </div>
+        <!--navigation header-->
         <div class="categContainer">
             <ul class="navigation">
                 <li>Lifestyle</li>
@@ -33,7 +34,7 @@
         <div class="posts">
             {{range .Posts}}
                 <div class="post">
-                    <h3>{{.Title}}</h3>
+                    <h3><a href="{{.URL}}">{{.Title}}</a></h3>
                     <p>{{.Content}}</p>
                     <p>Post created: {{.Time}}</p>
                     <br>

@@ -1,7 +1,16 @@
 package main
 
+// X make posts appear latest first
+// X make posts clickable (each post should have its own link)
+// X make HTML page for posts
+// X fix post pages
+// create comments section
+// configure likes and dislikes
+// split data.go into separate go files depending on function
+
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"html/template"
 	"log"
@@ -18,16 +27,23 @@ var db *sql.DB
 
 // struct for individual posts
 type Post struct {
-	// ID      int
+	id      string
 	Title   string
 	Content string
 	Time    string
+	URL     string
 }
 
 // struct for posts
 type HomePageData struct {
 	Posts []Post
 }
+
+type PostPageData struct {
+	Post *Post
+}
+
+var posts []Post
 
 // handle registration
 func registerHandler(w http.ResponseWriter, r *http.Request) {
@@ -79,7 +95,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	email := r.Form.Get("email")
 	password := r.Form.Get("password")
 	if email == "" || password == "" {
-		http.Error(w, "Please fill out all fields - we need to create a form here", http.StatusBadRequest)
+		http.Error(w, "Please fill out all fields", http.StatusBadRequest)
 		return
 	}
 	var storedPassword []byte // holds the hashed password from the database
@@ -126,16 +142,15 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 // show posts on homepage
 func executePosts() ([]Post, error) {
-	rows, err := db.Query("SELECT title, content, created_at FROM posts")
+	rows, err := db.Query("SELECT id, title, content, created_at FROM posts")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var posts []Post
 	for rows.Next() {
 		var post Post
-		err := rows.Scan(&post.Title, &post.Content, &post.Time)
+		err := rows.Scan(&post.id, &post.Title, &post.Content, &post.Time)
 		if err != nil {
 			return nil, err
 		}
@@ -145,14 +160,26 @@ func executePosts() ([]Post, error) {
 			return nil, err
 		}
 		post.Time = t.Format("January 2, 2006, 15:04:05")
+		// make post URLs
+		post.URL = "/post/" + post.id
 		posts = append(posts, post)
 	}
-
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
-
+	// reverse posts
+	posts = reverse(posts)
 	return posts, nil
+}
+
+// reverse posts (latest first)
+func reverse(s []Post) []Post {
+	//runes := []rune(s)
+	length := len(s)
+	for i, j := 0, length-1; i < j; i, j = i+1, j-1 {
+		s[i], s[j] = s[j], s[i]
+	}
+	return s
 }
 
 // serve homepage
@@ -224,6 +251,44 @@ func createPostHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
+// get post ID
+func getPostByID(postID string) (*Post, error) {
+	for i := range posts {
+		if posts[i].id == postID {
+			return &posts[i], nil
+		}
+	}
+	return nil, errors.New("post not found")
+}
+
+func postPageHandler(w http.ResponseWriter, r *http.Request) {
+	// get post id
+	postID := strings.TrimPrefix(r.URL.Path, "/post/")
+
+	// Assuming you have a function to fetch a single post by its ID
+	post, err := getPostByID(postID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	data := PostPageData{
+		Post: post,
+	}
+
+	tmpl, err := template.ParseFiles("postPage.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = tmpl.Execute(w, data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
 func main() {
 	var err error
 	db, err = sql.Open("sqlite3", "./database.db")
@@ -238,6 +303,7 @@ func main() {
 	http.HandleFunc("/login", loginHandler)
 	http.HandleFunc("/", homeHandler)
 	http.HandleFunc("/create-post", createPostHandler)
+	http.HandleFunc("/post/", postPageHandler)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
