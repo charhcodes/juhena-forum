@@ -60,7 +60,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	email := r.Form.Get("email")
 	username := r.Form.Get("username")
 	password := r.Form.Get("password")
-	if email == "" || username == "" || password == "" { //checking if any of these fields aee empty
+	if email == "" || username == "" || password == "" { //checking if any of these fields are empty
 		http.Error(w, "Please fill out all fields - we need to create a form here", http.StatusBadRequest)
 		return
 	}
