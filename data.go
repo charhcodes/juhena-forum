@@ -81,6 +81,7 @@ import (
 // 		return
 // 	}
 
+<<<<<<< HEAD
 // 	err := r.ParseForm()
 // 	if err != nil {
 // 		http.Error(w, "Could not parse form", http.StatusBadRequest)
@@ -103,6 +104,35 @@ import (
 // 		}
 // 		return
 // 	}
+=======
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, "Could not parse form", http.StatusBadRequest)
+		return
+	}
+	email := r.Form.Get("email")
+	username := r.Form.Get("username")
+	password := r.Form.Get("password")
+	if email == "" || username == "" || password == "" { //checking if any of these fields are empty
+		http.Error(w, "Please fill out all fields - we need to create a form here", http.StatusBadRequest)
+		return
+	}
+	//generates a bcrypt hashed password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Could not hash password", http.StatusInternalServerError)
+		return
+	}
+	_, err = db.Exec("INSERT INTO users (email, username, password) VALUES (?, ?, ?)", email, username, hashedPassword)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Could not create user", http.StatusInternalServerError)
+		return
+	}
+	fmt.Fprintln(w, "User registered")
+}
+>>>>>>> origin/wip
 
 // 	err = bcrypt.CompareHashAndPassword(storedPassword, []byte(password))
 // 	if err != nil {
@@ -110,11 +140,41 @@ import (
 // 		return
 // 	}
 
+<<<<<<< HEAD
 // 	// Set browser cookies to store login
 // 	http.SetCookie(w, &http.Cookie{
 // 		Name:  "user",
 // 		Value: email,
 // 	})
+=======
+	if r.Method == http.MethodGet {
+		http.ServeFile(w, r, "login.html")
+		return
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, "Could not parse form", http.StatusBadRequest)
+		return
+	}
+	email := r.Form.Get("email")
+	password := r.Form.Get("password")
+	if email == "" || password == "" {
+		http.Error(w, "Please fill out all fields", http.StatusBadRequest)
+		return
+	}
+	var storedPassword []byte // holds the hashed password from the database
+	err = db.QueryRow("SELECT password FROM users WHERE email = ?", email).Scan(&storedPassword)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "No user found with this email", http.StatusUnauthorized)
+		} else {
+			log.Println(err)
+			http.Error(w, "Database error", http.StatusInternalServerError)
+		}
+		return
+	}
+>>>>>>> origin/wip
 
 // 	// Generate a session ID
 // 	sessionID := uuid.New().String()
@@ -130,9 +190,27 @@ import (
 // 	// Set the cookie in the response headers
 // 	http.SetCookie(w, &cookie)
 
+<<<<<<< HEAD
 // 	// Redirect the user to the homepage
 // 	http.Redirect(w, r, "/", http.StatusFound)
 // }
+=======
+	// Create a new cookie with the session ID
+	// Create a new cookie with the session ID
+	cookie := http.Cookie{
+		Name:    "session",
+		Value:   sessionID,
+		Expires: time.Now().Add(1 * time.Hour), // Extend cookie expiration time
+		Path:    "/",
+	}
+
+	// Set the cookie in the response headers
+	http.SetCookie(w, &cookie)
+
+	// Redirect the user to the homepage
+	http.Redirect(w, r, "/", http.StatusFound)
+}
+>>>>>>> origin/wip
 
 // show posts on homepage
 // func executePosts() ([]Post, error) {
@@ -202,6 +280,7 @@ import (
 // }
 
 // serve and create post page
+<<<<<<< HEAD
 // func createPostHandler(w http.ResponseWriter, r *http.Request) {
 // 	if r.Method == http.MethodGet {
 // 		// Serve create post page
@@ -214,6 +293,35 @@ import (
 // 		http.Error(w, "Could not parse form", http.StatusBadRequest)
 // 		return
 // 	}
+=======
+func createPostHandler(w http.ResponseWriter, r *http.Request) {
+	// Check session cookie
+	sessionCookie, err := r.Cookie("session")
+	if err != nil {
+		// If there is an error, it means the session cookie was not found
+		// Redirect user to login page
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+
+	if sessionCookie.Value == "" {
+		// If the session cookie is empty, the user is not logged in
+		// Redirect user to login page
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	if r.Method == http.MethodGet {
+		// Serve create post page
+		http.ServeFile(w, r, "createPost.html")
+		return
+	}
+
+	err = r.ParseForm()
+	if err != nil {
+		http.Error(w, "Could not parse form", http.StatusBadRequest)
+		return
+	}
+>>>>>>> origin/wip
 
 // 	titleContent := r.Form.Get("postTitle")
 // 	postContent := r.Form.Get("postContent")
