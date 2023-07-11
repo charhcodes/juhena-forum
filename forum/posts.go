@@ -13,13 +13,28 @@ import (
 )
 
 func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
+	// Check session cookie
+	sessionCookie, err := r.Cookie("session")
+	if err != nil {
+		// If there is an error, it means the session cookie was not found
+		// Redirect user to login page
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+
+	if sessionCookie.Value == "" {
+		// If the session cookie is empty, the user is not logged in
+		// Redirect user to login page
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
 	if r.Method == http.MethodGet {
 		// Serve create post page
 		http.ServeFile(w, r, "createPost.html")
 		return
 	}
 
-	err := r.ParseForm()
+	err = r.ParseForm()
 	if err != nil {
 		http.Error(w, "Could not parse form", http.StatusBadRequest)
 		return

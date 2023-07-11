@@ -55,6 +55,11 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.Method == http.MethodGet {
+		http.ServeFile(w, r, "login.html")
+		return
+	}
+
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, "Could not parse form", http.StatusBadRequest)
@@ -67,7 +72,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var storedPassword []byte // holds the hashed password from the database
-	err = DB.QueryRow("SELECT password FROM users WHERE Email = ?", email).Scan(&storedPassword)
+	err = DB.QueryRow("SELECT password FROM users WHERE email = ?", email).Scan(&storedPassword)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			http.Error(w, "No user found with this email", http.StatusUnauthorized)
@@ -94,10 +99,11 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	sessionID := uuid.New().String()
 
 	// Create a new cookie with the session ID
+	// Create a new cookie with the session ID
 	cookie := http.Cookie{
 		Name:    "session",
 		Value:   sessionID,
-		Expires: time.Now().Add(300 * time.Second),
+		Expires: time.Now().Add(1 * time.Hour), // Extend cookie expiration time
 		Path:    "/",
 	}
 
