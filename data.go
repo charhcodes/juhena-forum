@@ -301,6 +301,7 @@ func main() {
 	http.HandleFunc("/", forum.HomeHandler)
 	http.HandleFunc("/create-post", forum.CreatePostHandler)
 	http.HandleFunc("/post/", forum.PostPageHandler)
+	http.HandleFunc("/submit-comment", forum.CreateCommentHandler)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 	forum.Shutdown()

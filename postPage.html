@@ -1,36 +1,70 @@
 <!DOCTYPE html>
 <head>
-    <link rel="stylesheet" href="styles.css">
+    <!-- <link rel="stylesheet" href="styles.css"> -->
     <title>{{.Post.Title}}</title>
 </head>
 <body>
+    <!-- <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#postComment').submit(function(e) {
+                e.preventDefault(); // Prevent the default form submission
+
+                // Get the form data
+                var formData = $(this).serialize();
+
+                // Send an AJAX POST request
+                $.ajax({
+                    url: '/submit-comment/',
+                    type: 'POST',
+                    data: formData,
+                    success: function(response) {
+                        // Handle the success response
+                        if (response.success) {
+                            console.log('Comment successfully posted!');
+                            location.reload(); // Refresh the page
+                        } else {
+                            console.log('Error - ' + response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        // Handle the error response
+                        console.log('Error - please try again.');
+                    }
+                });
+            });
+        });
+    </script> -->
+
     <h1>my forum</h1>
     <!--post details-->
     <div class="postContainer">
         <h2>{{.Post.Title}}</h2>
-        <h4>{{.Post.Content}}</h4>
-        <p>Posted by {{.Post.Author}} on {{.Post.Timestamp}}</p>
-    </div>
-    <div class="likesContainer">
-        <!--number of likes-->
-        <h5>{{.Likes}}</h5>
-        <!--like and dislike buttons-->
-        <div class="likebttn-container">
-            <form action="">
-                <button class="likebttn">Like</button>
-            </form>
-        </div>
-        <div class="dislikebttn-container">
-            <form action="">
-                <button class="dislikebttn">Dislike</button>
-            </form>
-        </div>
+        <p>{{.Post.Content}}</p>
     </div>
     <!--comments-->
-    <div class="commentsContainer">
-        <h4>{{.Comment}}</h4>
-        <h5>Comment created: {{.Time}}</h5>
-        <br>
+    <div class="addComment">
+        <h4>Add a Comment:</h4>
+        <form action="/submit-comment" method="POST">
+            <label for="post-comment">Post Comment:</label>
+            <br>
+            <textarea id="post-comment" name="postComment" rows="4" cols="50"></textarea>
+            <br>
+            <input type="submit" value="Submit Comment">
+        </form>
     </div>
+    <div class="commentSection">
+        <h4>Comments:</h4>
+        <!-- <div class="comments-container">
+            {{range .Comments}}
+                <div class="comments">
+                    <p>{{.Content}}</p>
+                    <p>Comment posted: {{.Time}} by {{.Author}}</p>
+                    <br>
+                </div>
+            {{end}}
+        </div> -->
+    </div>
+
 </body>
 </html>

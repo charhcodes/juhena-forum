@@ -12,8 +12,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
-	// Check session cookie
+// check cookies to see if user is logged in properly
+func checkCookies(w http.ResponseWriter, r *http.Request) {
 	sessionCookie, err := r.Cookie("session")
 	if err != nil {
 		// If there is an error, it means the session cookie was not found
@@ -28,13 +28,20 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
+}
+
+// CREATE POSTS FUNCTION
+func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
+	// Check session cookie
+	checkCookies(w, r)
+
 	if r.Method == http.MethodGet {
 		// Serve create post page
 		http.ServeFile(w, r, "createPost.html")
 		return
 	}
 
-	err = r.ParseForm()
+	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, "Could not parse form", http.StatusBadRequest)
 		return

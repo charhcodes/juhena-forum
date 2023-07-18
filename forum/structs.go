@@ -16,6 +16,15 @@ type Post struct {
 	Content string
 	Time    string
 	URL     string
+	// Author  string
+}
+
+// struct for comments
+type Comment struct {
+	//id      string
+	Content string
+	Time    string
+	Author  string
 }
 
 // struct for posts
@@ -26,6 +35,13 @@ type HomePageData struct {
 type PostPageData struct {
 	Post *Post
 }
+
+// struct to contain comments
+type CommentsData struct {
+	Comment []Comment
+}
+
+var comments []Comment
 
 var posts []Post
 
