@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -51,7 +52,7 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	postContent := r.Form.Get("postContent")
 
 	if titleContent == "" || postContent == "" {
-		fmt.Fprintln(w, "Error - please ensure fields aren't empty!")
+		fmt.Fprintln(w, "Error - please ensure title and post content fields are not empty!")
 		return
 	}
 
@@ -88,19 +89,45 @@ func getPostByID(postID string) (*Post, error) {
 }
 
 func PostPageHandler(w http.ResponseWriter, r *http.Request) {
-	// get post id
-	postID := strings.TrimPrefix(r.URL.Path, "/post/")
+	// Get post id from the URL path
+	postIDStr := strings.TrimPrefix(r.URL.Path, "/post/")
 
-	// Assuming you have a function to fetch a single post by its ID
-	post, err := getPostByID(postID)
+	postID, err := strconv.Atoi(postIDStr)
+	if err != nil {
+		http.Error(w, "Invalid post ID", http.StatusBadRequest)
+		return
+	}
+
+	// Assuming you have a function to retrieve the logged-in user's ID, if available
+	// If not, you can set it to a default value or handle it as you see fit.
+	// userID := "user1"
+
+	// Get the post data by calling the getPostByID function or fetching it from the database
+	post, err := getPostByID(postIDStr)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	data := PostPageData{
-		Post: post,
+	// Execute comments associated with the post
+	// comments, err := executeComments(postID)
+	// if err != nil {
+	// 	http.Error(w, "Could not retrieve comments", http.StatusInternalServerError)
+	// 	return
+	// }
+
+	// Assuming your Post struct has a field named PostID
+	var data struct {
+		PostID   int
+		Post     Post
+		Comments []Comment
+		Success  bool // Add the Success field to indicate if the comment was successfully posted
 	}
+
+	data.PostID = postID
+	data.Post = *post // Use the dereferenced post pointer
+	data.Comments = comments
+	data.Success = r.URL.Query().Get("success") == "1"
 
 	tmpl, err := template.ParseFiles("postPage.html")
 	if err != nil {
@@ -108,9 +135,96 @@ func PostPageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = tmpl.Execute(w, data)
+	// Render the template with the data
+	err = tmpl.ExecuteTemplate(w, "postPage.html", data)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 }
+
+// func PostPageHandler(w http.ResponseWriter, r *http.Request) {
+// 	// Get post id from the URL path
+// 	postIDStr := strings.TrimPrefix(r.URL.Path, "/post/")
+
+// 	postID, err := strconv.Atoi(postIDStr)
+// 	if err != nil {
+// 		http.Error(w, "Invalid post ID", http.StatusBadRequest)
+// 		return
+// 	}
+
+// 	// Execute comments associated with the post
+// 	// comments, err := executeComments(postID)
+// 	// if err != nil {
+// 	// 	http.Error(w, "Could not retrieve comments", http.StatusInternalServerError)
+// 	// 	return
+// 	// }
+
+// 	// Assuming you have a function to fetch a single post by its ID
+// 	post, err := getPostByID(postIDStr)
+// 	if err != nil {
+// 		http.Error(w, err.Error(), http.StatusNotFound)
+// 		return
+// 	}
+
+// 	// Pass the comments data to the template
+// 	// data := struct {
+// 	// 	Post     Post
+// 	// 	Comments []Comment
+// 	// }{
+// 	// 	Post:     *post, // Use the dereferenced post pointer
+// 	// 	Comments: comments,
+// 	// }
+
+// 	// Assuming your Post struct has a field named PostID
+// 	data := struct {
+// 		PostID   int
+// 		Post     Post
+// 		Comments []Comment
+// 	}{
+// 		PostID:   postID,
+// 		Post:     *post, // Use the dereferenced post pointer
+// 		Comments: comments,
+// 	}
+
+// 	tmpl, err := template.ParseFiles("postPage.html")
+// 	if err != nil {
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	// Render the template with the data
+// 	err = tmpl.ExecuteTemplate(w, "postPage.html", data) // Use the correct template name
+// 	if err != nil {
+// 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+// 		return
+// 	}
+// }
+
+// func PostPageHandler(w http.ResponseWriter, r *http.Request) {
+// 	// get post id
+// 	postID := strings.TrimPrefix(r.URL.Path, "/post/")
+
+// 	// Assuming you have a function to fetch a single post by its ID
+// 	post, err := getPostByID(postID)
+// 	if err != nil {
+// 		http.Error(w, err.Error(), http.StatusNotFound)
+// 		return
+// 	}
+
+// 	data := PostPageData{
+// 		Post: post,
+// 	}
+
+// 	tmpl, err := template.ParseFiles("postPage.html")
+// 	if err != nil {
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	err = tmpl.Execute(w, data)
+// 	if err != nil {
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
+// }

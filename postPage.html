@@ -1,70 +1,39 @@
 <!DOCTYPE html>
 <head>
-    <!-- <link rel="stylesheet" href="styles.css"> -->
     <title>{{.Post.Title}}</title>
 </head>
 <body>
-    <!-- <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            $('#postComment').submit(function(e) {
-                e.preventDefault(); // Prevent the default form submission
-
-                // Get the form data
-                var formData = $(this).serialize();
-
-                // Send an AJAX POST request
-                $.ajax({
-                    url: '/submit-comment/',
-                    type: 'POST',
-                    data: formData,
-                    success: function(response) {
-                        // Handle the success response
-                        if (response.success) {
-                            console.log('Comment successfully posted!');
-                            location.reload(); // Refresh the page
-                        } else {
-                            console.log('Error - ' + response.message);
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        // Handle the error response
-                        console.log('Error - please try again.');
-                    }
-                });
-            });
-        });
-    </script> -->
-
     <h1>my forum</h1>
     <!--post details-->
     <div class="postContainer">
         <h2>{{.Post.Title}}</h2>
         <p>{{.Post.Content}}</p>
     </div>
+
+    {{ if .Success }}
+    <p>Comment successfully posted!</p>
+    {{ end }}
+
     <!--comments-->
-    <div class="addComment">
-        <h4>Add a Comment:</h4>
-        <form action="/submit-comment" method="POST">
-            <label for="post-comment">Post Comment:</label>
-            <br>
-            <textarea id="post-comment" name="postComment" rows="4" cols="50"></textarea>
+    <!-- Display comments -->
+
+    <!-- <div class="comments-container">
+        <h3>Comments:</h3>
+            {{ range .Comments }}
+            <p>{{ .Content }}</p>
+            <p>Posted at: {{ .Time }}</p>
+        {{ end }}
+    </div> -->
+
+
+    <!-- Comment submission form -->
+    <div class="post-comment-container">
+        <h3>Post a Comment:</h3>
+        <form action="/post-comment/{{ .PostID }}" method="post">
+            <textarea name="commentContent" rows="4" cols="50"></textarea>
             <br>
             <input type="submit" value="Submit Comment">
         </form>
     </div>
-    <div class="commentSection">
-        <h4>Comments:</h4>
-        <!-- <div class="comments-container">
-            {{range .Comments}}
-                <div class="comments">
-                    <p>{{.Content}}</p>
-                    <p>Comment posted: {{.Time}} by {{.Author}}</p>
-                    <br>
-                </div>
-            {{end}}
-        </div> -->
-    </div>
-
 </body>
 </html>
