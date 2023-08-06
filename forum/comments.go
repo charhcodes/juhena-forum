@@ -24,8 +24,15 @@ func PostCommentHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Assuming you have a function to retrieve the logged-in user's ID, if available
 	// If not, you can set it to a default value or handle it as you see fit.
-	userID := "user1"
-	fmt.Println(userID)
+	// userID := "user1"
+	// fmt.Println(userID)
+
+	// Retrieve the sessionID and userID from the cookie
+	_, userId, err := CommentgetCookieValue(r)
+	if err != nil {
+		http.Error(w, "cookie not found", http.StatusBadRequest)
+		return
+	}
 
 	err = r.ParseForm()
 	if err != nil {
@@ -42,20 +49,40 @@ func PostCommentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dateCreated := time.Now()
-	updatedAt := dateCreated
-	fmt.Println(dateCreated)
+	fmt.Println(userId)
+	userIdInt, err := strconv.Atoi(userId)
+	if err != nil {
+		http.Error(w, "Could not convert", http.StatusInternalServerError)
+		return
+	}
 
+	// Use userID and postID to create a new comment
+	//user_ID gets excecuted to the database
 	_, err = DB.Exec("INSERT INTO comments (post_id, user_id, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
-		postID, userID, postComment, dateCreated, updatedAt)
+		postID, userIdInt, postComment, dateCreated, dateCreated)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Could not post comment", http.StatusInternalServerError)
 		return
 	}
 
+	// dateCreated := time.Now()
+	// updatedAt := dateCreated
+	// fmt.Println(dateCreated)
+
+	// _, err = DB.Exec("INSERT INTO comments (post_id, user_id, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+	// 	postID, userID, postComment, dateCreated, updatedAt)
+	// if err != nil {
+	// 	log.Println(err)
+	// 	http.Error(w, "Could not post comment", http.StatusInternalServerError)
+	// 	return
+	// }
+
 	fmt.Println("Comment successfully posted!")
 
-	http.Redirect(w, r, "/post-comment/"+postIDStr+"?success=1", http.StatusFound)
+	http.Redirect(w, r, "/post/7", http.StatusFound) //temporarily redirecting to post7 as the submit comment endpoint errors out
+
+	// http.Redirect(w, r, "/post-comment/"+postIDStr+"?success=1", http.StatusFound)
 
 	// // Check session cookie
 	// checkCookies(w, r)
@@ -124,6 +151,17 @@ func PostCommentHandler(w http.ResponseWriter, r *http.Request) {
 
 	// fmt.Println("Comment successfully posted!")
 	// http.Redirect(w, r, "/post/"+postID, http.StatusFound)
+}
+
+func CommentgetCookieValue(r *http.Request) (string, string, error) {
+	//split to cookie and value
+	cookie, err := r.Cookie("session")
+	if err != nil {
+		return "", "", err
+	}
+	value := strings.Split(cookie.Value, "&")
+
+	return value[0], value[1], nil
 }
 
 // view and execute comments

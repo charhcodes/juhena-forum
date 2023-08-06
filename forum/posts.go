@@ -48,6 +48,12 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_, userId, err := GetCookieValue(r)
+	if err != nil {
+		http.Error(w, "cookie not found", http.StatusBadRequest)
+		return
+	}
+
 	titleContent := r.Form.Get("postTitle")
 	postContent := r.Form.Get("postContent")
 
@@ -63,9 +69,25 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	categoriesString := strings.Join(categories, ",")
 	fmt.Printf("Post categories: %s\n", categoriesString)
 
-	dateCreated := time.Now()
+	// dateCreated := time.Now()
 
-	_, err = DB.Exec("INSERT INTO posts (title, content, category_id, created_at) VALUES (?, ?, ?, ?)", titleContent, postContent, categoriesString, dateCreated)
+	// _, err = DB.Exec("INSERT INTO posts (title, content, category_id, created_at) VALUES (?, ?, ?, ?)", titleContent, postContent, categoriesString, dateCreated)
+	// if err != nil {
+	// 	log.Println(err)
+	// 	http.Error(w, "Could not create post", http.StatusInternalServerError)
+	// 	return
+	// }
+
+	//ricky below
+	dateCreated := time.Now()
+	fmt.Println(userId)
+	userIdInt, err := strconv.Atoi(userId)
+	if err != nil {
+		http.Error(w, "Could not convert", http.StatusInternalServerError)
+		return
+	}
+	//ricky below - added placeholders and userintid
+	_, err = DB.Exec("INSERT INTO posts (user_id, title, content, category_id, created_at) VALUES (?, ?, ?, ?, ?)", userIdInt, titleContent, postContent, categoriesString, dateCreated)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Could not create post", http.StatusInternalServerError)
@@ -76,6 +98,17 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Redirect the user to the homepage
 	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+func GetCookieValue(r *http.Request) (string, string, error) {
+	//ricky below - indices represent the split to cookie and value
+	cookie, err := r.Cookie("session")
+	if err != nil {
+		return "", "", err
+	}
+	value := strings.Split(cookie.Value, "&")
+
+	return value[0], value[1], nil
 }
 
 // get post ID
