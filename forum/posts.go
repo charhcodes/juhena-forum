@@ -142,13 +142,6 @@ func PostPageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Execute comments associated with the post
-	// comments, err := executeComments(postID)
-	// if err != nil {
-	// 	http.Error(w, "Could not retrieve comments", http.StatusInternalServerError)
-	// 	return
-	// }
-
 	// Assuming your Post struct has a field named PostID
 	var data struct {
 		PostID   int

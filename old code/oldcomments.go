@@ -22,6 +22,11 @@ func PostCommentHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Assuming you have a function to retrieve the logged-in user's ID, if available
+	// If not, you can set it to a default value or handle it as you see fit.
+	// userID := "user1"
+	// fmt.Println(userID)
+
 	// Retrieve the sessionID and userID from the cookie
 	_, userId, err := CommentgetCookieValue(r)
 	if err != nil {
@@ -61,9 +66,91 @@ func PostCommentHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// dateCreated := time.Now()
+	// updatedAt := dateCreated
+	// fmt.Println(dateCreated)
+
+	// _, err = DB.Exec("INSERT INTO comments (post_id, user_id, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+	// 	postID, userID, postComment, dateCreated, updatedAt)
+	// if err != nil {
+	// 	log.Println(err)
+	// 	http.Error(w, "Could not post comment", http.StatusInternalServerError)
+	// 	return
+	// }
+
 	fmt.Println("Comment successfully posted!")
 
-	http.Redirect(w, r, "/post/"+postIDStr+"?success=1", http.StatusFound)
+	// http.Redirect(w, r, "/post/7", http.StatusFound) //temporarily redirecting to post7 as the submit comment endpoint errors out
+
+	http.Redirect(w, r, "/post-comment/"+postIDStr+"?success=1", http.StatusFound)
+
+	// // Check session cookie
+	// checkCookies(w, r)
+
+	// // Get postID from URL path
+	// postIDStr := strings.TrimPrefix(r.URL.Path, "/post/")
+	// postID, err := strconv.Atoi(postIDStr)
+	// if err != nil {
+	// 	http.Error(w, "Invalid post ID", http.StatusBadRequest)
+	// 	return
+	// }
+
+	// err = r.ParseForm()
+	// if err != nil {
+	// 	http.Error(w, "Could not parse form", http.StatusBadRequest)
+	// 	return
+	// }
+
+	// postComment := r.Form.Get("commentContent") // Change to "commentContent"
+
+	// if postComment == "" {
+	// 	fmt.Fprintln(w, "Error - please ensure fields aren't empty!")
+	// 	return
+	// }
+
+	// dateCreated := time.Now()
+
+	// // Use the postID in the SQL query to associate the comment with the correct post
+	// _, err = DB.Exec("INSERT INTO comments (post_id, content, created_at) VALUES (?, ?, ?)", postID, postComment, dateCreated)
+	// if err != nil {
+	// 	log.Println(err)
+	// 	http.Error(w, "Could not post comment", http.StatusInternalServerError)
+	// 	return
+	// }
+
+	// fmt.Println("Comment successfully posted!")
+	// http.Redirect(w, r, "/post/"+postIDStr, http.StatusFound) // Redirect back to the post page
+
+	// // Check session cookie
+	// checkCookies(w, r)
+
+	// err := r.ParseForm()
+	// if err != nil {
+	// 	http.Error(w, "Could not parse form", http.StatusBadRequest)
+	// 	return
+	// }
+
+	// postID := r.Form.Get("postID")
+	// commentContent := r.Form.Get("commentContent")
+
+	// if postID == "" || commentContent == "" {
+	// 	fmt.Fprintln(w, "Error - please ensure fields aren't empty!")
+	// 	return
+	// }
+
+	// userID := 0 // Get the userID of the currently logged-in user, if available
+
+	// dateCreated := time.Now()
+
+	// _, err = DB.Exec("INSERT INTO comments (user_id, post_id, content, created_at) VALUES (?, ?, ?, ?)", userID, postID, commentContent, dateCreated)
+	// if err != nil {
+	// 	log.Println(err)
+	// 	http.Error(w, "Could not post comment", http.StatusInternalServerError)
+	// 	return
+	// }
+
+	// fmt.Println("Comment successfully posted!")
+	// http.Redirect(w, r, "/post/"+postID, http.StatusFound)
 }
 
 func CommentgetCookieValue(r *http.Request) (string, string, error) {
