@@ -9,6 +9,7 @@ import (
 )
 
 func executePosts() ([]Post, error) {
+	var posts []Post //local struct - don't change as it duplicates the posts for some reason. 
 	rows, err := DB.Query("SELECT id, title, content, created_at FROM posts")
 	if err != nil {
 		return nil, err

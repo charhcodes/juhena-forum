@@ -3,6 +3,7 @@ package forum
 import (
 	"database/sql"
 	"log"
+	
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -21,10 +22,11 @@ type Post struct {
 
 // struct for comments
 type Comment struct {
-	//id      string
-	Content string
-	Time    string
-	Author  string
+	UserID  string //
+	PostID string //
+	Content string  
+	Time    string 
+	// Author  string
 }
 
 // struct for posts
@@ -41,9 +43,9 @@ type CommentsData struct {
 	Comment []Comment
 }
 
-var comments []Comment
+// var comments []Comment
 
-var posts []Post
+//var posts []Post
 
 // initialise DB
 func Init() {

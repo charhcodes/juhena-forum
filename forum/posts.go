@@ -1,6 +1,7 @@
 package forum
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -78,7 +79,7 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	// 	return
 	// }
 
-	//ricky below
+	//added
 	dateCreated := time.Now()
 	fmt.Println(userId)
 	userIdInt, err := strconv.Atoi(userId)
@@ -86,7 +87,7 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Could not convert", http.StatusInternalServerError)
 		return
 	}
-	//ricky below - added placeholders and userintid
+	// - added placeholders and userintid
 	_, err = DB.Exec("INSERT INTO posts (user_id, title, content, category_id, created_at) VALUES (?, ?, ?, ?, ?)", userIdInt, titleContent, postContent, categoriesString, dateCreated)
 	if err != nil {
 		log.Println(err)
@@ -101,7 +102,7 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetCookieValue(r *http.Request) (string, string, error) {
-	//ricky below - indices represent the split to cookie and value
+	//- indices represent the split to cookie and value
 	cookie, err := r.Cookie("session")
 	if err != nil {
 		return "", "", err
@@ -113,15 +114,64 @@ func GetCookieValue(r *http.Request) (string, string, error) {
 
 // get post ID
 func getPostByID(postID string) (*Post, error) {
-	for i := range posts {
-		if posts[i].id == postID {
-			return &posts[i], nil
+	//added
+	row := DB.QueryRow("SELECT id, title, content, created_at FROM posts WHERE id = ?", postID)
+	var post Post
+	err := row.Scan(&post.id, &post.Title, &post.Content, &post.Time)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errors.New("post not found")
 		}
+		return nil, err
 	}
-	return nil, errors.New("post not found")
+	// Format the datetime string
+	t, err := time.Parse("2006-01-02T15:04:05.999999999-07:00", post.Time)
+	if err != nil {
+		return nil, err
+	}
+	post.Time = t.Format("January 2, 2006, 15:04:05")
+	// make post URLs
+	post.URL = "/post/" + post.id
+	return &post, nil
+
+	//old code below
+
+	// for i := range posts {
+	// 	if posts[i].id == postID {
+	// 		return &posts[i], nil
+	// 	}
+	// }
+	// return nil, errors.New("post not found")
+}
+func getCommentsByPostID(postID string) ([]Comment, error) {
+	comments := []Comment{} // creating an empty slice to store comments from the database //i've also added postID and userID to the comment struct
+	rows, err := DB.Query("SELECT user_id, post_id, content, created_at FROM comments WHERE post_id = ?", postID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var comment Comment
+		err := rows.Scan(&comment.UserID, &comment.PostID, &comment.Content, &comment.Time)
+		if err != nil {
+			return nil, err
+		}
+		t, err := time.Parse("2006-01-02T15:04:05.999999999-07:00", comment.Time)
+		if err != nil {
+			return nil, err
+		}
+		comment.Time = t.Format("January 2, 2006, 15:04:05")
+		comments = append(comments, comment)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return comments, nil
 }
 
 func PostPageHandler(w http.ResponseWriter, r *http.Request) {
+
 	// Get post id from the URL path
 	postIDStr := strings.TrimPrefix(r.URL.Path, "/post/")
 
@@ -130,7 +180,7 @@ func PostPageHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid post ID", http.StatusBadRequest)
 		return
 	}
-
+	var comments []Comment
 	// Assuming you have a function to retrieve the logged-in user's ID, if available
 	// If not, you can set it to a default value or handle it as you see fit.
 	// userID := "user1"
@@ -139,6 +189,12 @@ func PostPageHandler(w http.ResponseWriter, r *http.Request) {
 	post, err := getPostByID(postIDStr)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	//get comments by postID -
+	comments, err = getCommentsByPostID(postIDStr)
+	if err != nil {
+		http.Error(w, "Could not fetch comments", http.StatusInternalServerError)
 		return
 	}
 
@@ -167,90 +223,5 @@ func PostPageHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
+
 }
-
-// func PostPageHandler(w http.ResponseWriter, r *http.Request) {
-// 	// Get post id from the URL path
-// 	postIDStr := strings.TrimPrefix(r.URL.Path, "/post/")
-
-// 	postID, err := strconv.Atoi(postIDStr)
-// 	if err != nil {
-// 		http.Error(w, "Invalid post ID", http.StatusBadRequest)
-// 		return
-// 	}
-
-// 	// Execute comments associated with the post
-// 	// comments, err := executeComments(postID)
-// 	// if err != nil {
-// 	// 	http.Error(w, "Could not retrieve comments", http.StatusInternalServerError)
-// 	// 	return
-// 	// }
-
-// 	// Assuming you have a function to fetch a single post by its ID
-// 	post, err := getPostByID(postIDStr)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusNotFound)
-// 		return
-// 	}
-
-// 	// Pass the comments data to the template
-// 	// data := struct {
-// 	// 	Post     Post
-// 	// 	Comments []Comment
-// 	// }{
-// 	// 	Post:     *post, // Use the dereferenced post pointer
-// 	// 	Comments: comments,
-// 	// }
-
-// 	// Assuming your Post struct has a field named PostID
-// 	data := struct {
-// 		PostID   int
-// 		Post     Post
-// 		Comments []Comment
-// 	}{
-// 		PostID:   postID,
-// 		Post:     *post, // Use the dereferenced post pointer
-// 		Comments: comments,
-// 	}
-
-// 	tmpl, err := template.ParseFiles("postPage.html")
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	// Render the template with the data
-// 	err = tmpl.ExecuteTemplate(w, "postPage.html", data) // Use the correct template name
-// 	if err != nil {
-// 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-// 		return
-// 	}
-// }
-
-// func PostPageHandler(w http.ResponseWriter, r *http.Request) {
-// 	// get post id
-// 	postID := strings.TrimPrefix(r.URL.Path, "/post/")
-
-// 	// Assuming you have a function to fetch a single post by its ID
-// 	post, err := getPostByID(postID)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusNotFound)
-// 		return
-// 	}
-
-// 	data := PostPageData{
-// 		Post: post,
-// 	}
-
-// 	tmpl, err := template.ParseFiles("postPage.html")
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	err = tmpl.Execute(w, data)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// }
