@@ -8,12 +8,11 @@
     <div class="postContainer">
         <h2>{{.Post.Title}}</h2>
         <p>{{.Post.Content}}</p>
-        <h3>Likes: {{.Post.LikeCount}}</h3>
         <form action="/post-like/{{ .PostID }}" method="POST">
-            <button>{{if .Liked}}Unlike{{else}}Like{{end}}</button>
+            <button>Like</button>
         </form>
-        <form action="/post-dislike/{{ .PostID }}" method="POST">
-            <button>{{if .Disliked}}Undislike{{else}}Dislike{{end}}</button>
+        <form action="/post-like/{{ .PostID }}" method="POST">
+            <button>Dislike</button>
         </form>
     </div>
     
