@@ -8,6 +8,18 @@
     <div class="postContainer">
         <h2>{{.Post.Title}}</h2>
         <p>{{.Post.Content}}</p>
+        <h3>Likes: {{.Post.LikeCount}}</h3>
+        <form action="/post-like/{{ .PostID }}" method="POST">
+            <button>{{if .Liked}}Unlike{{else}}Like{{end}}</button>
+        </form>
+        <form action="/post-dislike/{{ .PostID }}" method="POST">
+            <button>{{if .Disliked}}Undislike{{else}}Dislike{{end}}</button>
+        </form>
+    </div>
+    
+    <!-- <div class="postContainer">
+        <h2>{{.Post.Title}}</h2>
+        <p>{{.Post.Content}}</p>
         <h3>Likes:</h3>
         <form action="/post-like/{{ .PostID }}" id="like-button" method="POST">
            <button>Like</button>
@@ -15,7 +27,7 @@
         <form action="/post-dislike/{{ .PostID }}" id="dislike-button" method="POST">
             <button>Dislike</button>
         </form>
-    </div>
+    </div> -->
 
     {{ if .Success }}
     <p>Comment successfully posted!</p>

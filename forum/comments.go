@@ -23,7 +23,7 @@ func PostCommentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Retrieve the sessionID and userID from the cookie
-	_, userId, err := CommentgetCookieValue(r)
+	_, userId, err := GetCookieValue(r)
 	if err != nil {
 		http.Error(w, "cookie not found", http.StatusBadRequest)
 		return
@@ -64,15 +64,4 @@ func PostCommentHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Comment successfully posted!")
 
 	http.Redirect(w, r, "/post/"+postIDStr, http.StatusFound)
-}
-
-func CommentgetCookieValue(r *http.Request) (string, string, error) {
-	//split to cookie and value
-	cookie, err := r.Cookie("session")
-	if err != nil {
-		return "", "", err
-	}
-	value := strings.Split(cookie.Value, "&")
-
-	return value[0], value[1], nil
 }
