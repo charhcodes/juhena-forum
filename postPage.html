@@ -9,10 +9,12 @@
         <h2>{{.Post.Title}}</h2>
         <p>{{.Post.Content}}</p>
         <form action="/post-like/{{ .PostID }}" method="POST">
-            <button>Like</button>
+            <input type="hidden" name="action" value="like">
+            <button type="submit">Like</button>
         </form>
         <form action="/post-like/{{ .PostID }}" method="POST">
-            <button>Dislike</button>
+            <input type="hidden" name="action" value="dislike">
+            <button type="submit">Dislike</button>
         </form>
     </div>
     
@@ -32,18 +34,6 @@
     <p>Comment successfully posted!</p>
     {{ end }}
 
-    <!--comments-->
-    <!-- Display comments -->
-
-    <div class="comments-container">
-        <h3>Comments:</h3>
-            {{ range .Comments }}
-            <p>{{ .Content }}</p>
-            <p>Posted at: {{ .Time }}</p>
-        {{ end }}
-    </div> 
-
-
     <!-- Comment submission form -->
     <div class="post-comment-container">
         <h3>Post a Comment:</h3>
@@ -53,5 +43,15 @@
             <input type="submit" value="Submit Comment">
         </form>
     </div>
+
+    <!--comments-->
+    <div class="comments-container">
+        <h3>Comments:</h3>
+            {{ range .Comments }}
+            <p>{{ .Content }}</p>
+            <p>Posted at: {{ .Time }}</p>
+        {{ end }}
+    </div> 
+
 </body>
 </html>

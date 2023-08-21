@@ -34,47 +34,51 @@ func HandleLikesDislikes(w http.ResponseWriter, r *http.Request) {
 	// get postID, userID
 	postID = getPostID(w, r)
 	userID = getUserID(w, r)
+	fmt.Println(postID)
+	fmt.Println(userID)
+
+	r.ParseForm()
+	action := r.FormValue("action")
 
 	// Check if the user has already liked/disliked the post
-	liked, disliked, err := checkUserLikeDislike(userID, postID)
+	_, _, err := checkUserLikeDislike(userID, postID)
 	if err != nil {
 		http.Error(w, "Error checking user like/dislike", http.StatusInternalServerError)
 		return
 	}
 
 	// Handle the like/dislike action based on user's previous interaction
-	if r.Method == http.MethodPost {
-		if liked {
-			// remove already existing like/dislike, add like
-			err := removeLikeDislike(userID, postID)
-			if err != nil {
-				http.Error(w, "Error removing like/dislike 1", http.StatusInternalServerError)
-				return
-			}
-			err = addDislike(userID, postID)
-			if err != nil {
-				http.Error(w, "Error adding dislike 1", http.StatusInternalServerError)
-				return
-			}
-		} else if disliked {
-			// remove already existing like/dislike, add dislike
-			err := removeLikeDislike(userID, postID)
-			if err != nil {
-				http.Error(w, "Error removing like/dislike 2", http.StatusInternalServerError)
-				return
-			}
-			err = addLike(userID, postID)
-			if err != nil {
-				http.Error(w, "Error adding like 1", http.StatusInternalServerError)
-				return
-			}
-		} else {
-			err := removeLikeDislike(userID, postID)
-			if err != nil {
-				http.Error(w, "Error adding like 2", http.StatusInternalServerError)
-				return
-			}
+	// if r.Method == http.MethodPost {
+	if action == "like" {
+		// remove already existing like/dislike, add like
+		err := removeLikeDislike(userID, postID)
+		if err != nil {
+			http.Error(w, "Error removing like/dislike 1", http.StatusInternalServerError)
+			return
 		}
+		err = addLike(userID, postID)
+		if err != nil {
+			http.Error(w, "Error adding like 1", http.StatusInternalServerError)
+			return
+		}
+	} else if action == "dislike" {
+		// remove already existing like/dislike, add dislikea
+		err := removeLikeDislike(userID, postID)
+		if err != nil {
+			http.Error(w, "Error removing like/dislike 2", http.StatusInternalServerError)
+			return
+		}
+		err = addDislike(userID, postID)
+		if err != nil {
+			http.Error(w, "Error adding dislike 1", http.StatusInternalServerError)
+			return
+		}
+		// } else {
+		// 	err := addLike(userID, postID)
+		// 	if err != nil {
+		// 		http.Error(w, "Error adding like 2", http.StatusInternalServerError)
+		// 		return
+		// 	}
 	}
 
 	fmt.Println("Like/Dislike successful!")
@@ -108,7 +112,7 @@ func checkUserLikeDislike(userID string, postID int) (liked bool, disliked bool,
 }
 
 func addLike(userID string, postID int) error {
-	_, err := DB.Exec("INSERT INTO postlikes (user_id, post_id, type) VALUES (?, ?, 1)", userID, postID)
+	_, err := DB.Exec("INSERT INTO postlikes (user_id, post_id, type) VALUES (?, ?, '1')", userID, postID)
 	if err != nil {
 		return err
 	}
@@ -116,7 +120,7 @@ func addLike(userID string, postID int) error {
 }
 
 func addDislike(userID string, postID int) error {
-	_, err := DB.Exec("INSERT INTO postlikes (user_id, post_id, type) VALUES (?, ?, -1)", userID, postID)
+	_, err := DB.Exec("INSERT INTO postlikes (user_id, post_id, type) VALUES (?, ?, '-1')", userID, postID)
 	if err != nil {
 		return err
 	}
@@ -124,10 +128,12 @@ func addDislike(userID string, postID int) error {
 }
 
 func removeLikeDislike(userID string, postID int) error {
-	_, err := DB.Exec("INSERT INTO postlikes (user_id, post_id, stype) VALUES (?, ?, 0)", userID, postID)
+	// _, err := DB.Exec("INSERT INTO postlikes (user_id, post_id, type) VALUES (?, ?, 0)", userID, postID)
+	_, err := DB.Exec("DELETE FROM postlikes WHERE user_id = ? AND post_id = ?", userID, postID)
 	if err != nil {
 		return err
 	}
+	fmt.Println("Like/Dislike removed successfully")
 	return nil
 }
 
