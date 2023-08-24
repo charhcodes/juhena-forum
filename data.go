@@ -29,6 +29,7 @@ func main() {
 	http.HandleFunc("/post/", forum.PostPageHandler)
 	http.HandleFunc("/post-comment/", forum.PostCommentHandler)
 	http.HandleFunc("/post-like/", forum.HandleLikesDislikes)
+	http.HandleFunc("/comment-like/", forum.CommentLikesHandler)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 	forum.Shutdown()
