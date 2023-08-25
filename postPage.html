@@ -16,8 +16,11 @@
             <input type="hidden" name="action" value="dislike">
             <button type="submit">Dislike</button>
         </form>
+
+        <p>Likes: {{ .LikeCount }}, Dislikes: {{ .DislikeCount}}</p><!-- ADDED-->
     </div>
     
+   
     <!-- <div class="postContainer">
         <h2>{{.Post.Title}}</h2>
         <p>{{.Post.Content}}</p>
