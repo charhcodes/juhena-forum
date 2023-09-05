@@ -64,20 +64,11 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get selected categories
-	categories := r.Form["checkboxes"]
+	categories := r.Form["postCategories"]
 
 	// Convert categories to a comma-separated string
 	categoriesString := strings.Join(categories, ",")
 	fmt.Printf("Post categories: %s\n", categoriesString)
-
-	// dateCreated := time.Now()
-
-	// _, err = DB.Exec("INSERT INTO posts (title, content, category_id, created_at) VALUES (?, ?, ?, ?)", titleContent, postContent, categoriesString, dateCreated)
-	// if err != nil {
-	// 	log.Println(err)
-	// 	http.Error(w, "Could not create post", http.StatusInternalServerError)
-	// 	return
-	// }
 
 	//added
 	dateCreated := time.Now()
@@ -133,16 +124,8 @@ func getPostByID(postID string) (*Post, error) {
 	// make post URLs
 	post.URL = "/post/" + post.id
 	return &post, nil
-
-	//old code below
-
-	// for i := range posts {
-	// 	if posts[i].id == postID {
-	// 		return &posts[i], nil
-	// 	}
-	// }
-	// return nil, errors.New("post not found")
 }
+
 func getCommentsByPostID(postID string) ([]Comment, error) {
 	comments := []Comment{} // creating an empty slice to store comments from the database //i've also added postID and userID to the comment struct
 	rows, err := DB.Query("SELECT user_id, post_id, content, created_at FROM comments WHERE post_id = ?", postID)
@@ -171,7 +154,6 @@ func getCommentsByPostID(postID string) ([]Comment, error) {
 }
 
 func PostPageHandler(w http.ResponseWriter, r *http.Request) {
-
 	// Get post id from the URL path
 	postIDStr := strings.TrimPrefix(r.URL.Path, "/post/")
 

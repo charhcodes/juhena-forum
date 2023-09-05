@@ -29,15 +29,22 @@
             </div>
             <button type="submit">Filter</button>
         </form>
+        <div class="redirect">
+            <form action="http://localhost:8080/">
+                <button class="redirect-button" type="submit">Show all posts</button>
+            </form>
+        </div>
+
         <br>
         <div class="createpostContainer">
             <form action="http://localhost:8080/create-post">
                 <button class="create-button" type="submit">Create post</button>
             </form>
         </div>
-        <!--differentiate between post title and post body, and separate posts-->
+        <!--show filtered posts-->
+        <h1>Filtered Posts - Category: {{.Category}}</h1>
         <div class="posts">
-            {{range .Posts}}
+            {{range .FilteredPosts}}
                 <div class="post">
                     <h3><a href="{{.URL}}">{{.Title}}</a></h3>
                     <p>{{.Content}}</p>
