@@ -6,18 +6,36 @@
     <h1>my forum</h1>
     <!--post details-->
     <div class="postContainer">
-        <h2>{{.Post.Title}}</h2>
-        <p>{{.Post.Content}}</p>
-        <form action="/post-like/{{ .PostID }}" method="POST">
-            <input type="hidden" name="action" value="like">
-            <button type="submit">Like</button>
-        </form>
-        <form action="/post-like/{{ .PostID }}" method="POST">
-            <input type="hidden" name="action" value="dislike">
-            <button type="submit">Dislike</button>
-        </form>
 
-        <p>Likes: {{ .LikeCount }}, Dislikes: {{ .DislikeCount}}</p><!-- ADDED-->
+<h1>{{ .Post.Title }}</h1>
+<p>{{ .Post.Content }}</p>
+
+<!-- Display the like and dislike counts -->
+<p>Like: {{ .Like }}</p>
+<p>Dislike: {{ .Dislike }}</p>
+
+<!-- Display like and dislike buttons -->
+{{ if .IsLiked }}
+  <button disabled>Like</button>
+{{ else }}
+  <form action="/post-like/{{ .PostID }}" method="post">
+    <input type="hidden" name="action" value="like">
+    <button type="submit">Like</button>
+  </form>
+{{ end }}
+
+{{ if .IsDisliked }}
+  <button disabled>Dislike</button>
+{{ else }}
+  <form action="/post-like/{{ .PostID }}" method="post">
+    <input type="hidden" name="action" value="dislike">
+    <button type="submit">Dislike</button>
+  </form>
+{{ end }}
+
+<!-- Display comments and other post details as needed -->
+
+       
     </div>
     
    

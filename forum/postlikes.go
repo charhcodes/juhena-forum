@@ -1,10 +1,13 @@
 package forum
 
 import (
+	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
+	"text/template"
 )
 
 var postID int
@@ -34,24 +37,75 @@ func HandleLikesDislikes(w http.ResponseWriter, r *http.Request) {
 	// Check session cookie
 	checkCookies(w, r)
 
-	// get postID, userID
-	postID = getPostID(w, r)
-	userID = getUserID(w, r)
+	// Get post id from the URL path
+	postIDStr := strings.TrimPrefix(r.URL.Path, "/post/")
+
+	postID, err := strconv.Atoi(postIDStr)
+	if err != nil {
+		http.Error(w, "Invalid post ID", http.StatusBadRequest)
+		return
+	}
+	var comments []Comment
+
+	// Assuming you have a function to retrieve the logged-in user's ID, if available
+	// If not, you can set it to a default value or handle it as you see fit.
+	// userID := "user1"
+
+	// Get the post data by calling the getPostByID function or fetching it from the database
+	post, err := getPostByID(postIDStr)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	// Get comments by postID
+	comments, err = getCommentsByPostID(postIDStr)
+	if err != nil {
+		http.Error(w, "Could not fetch comments", http.StatusInternalServerError)
+		return
+	}
+
+	// Get like and dislike counts for the post
+	likeCount := GetLikeCount(postID, 0, "posts")
+	dislikeCount := GetDislikeCount(postID, 0, "posts")
+
+	// Assuming your Post struct has a field named PostID
+	var data struct {
+		PostID     int
+		Post       Post
+		Comments   []Comment
+		Success    bool // Add the Success field to indicate if the comment was successfully posted
+		Like       int  // Like count
+		Dislike    int  // Dislike count
+		IsLiked    bool // Indicate if the user has liked this post
+		IsDisliked bool // Indicate if the user has disliked this post
+	}
+
+	data.PostID = postID
+	data.Post = *post // Use the dereferenced post pointer
+	data.Comments = comments
+	data.Success = r.URL.Query().Get("success") == "1"
+	data.Like = likeCount
+	data.Dislike = dislikeCount
+
+	// Get the user's ID and check if they have liked/disliked this post
+	userID := getUserID(w, r)
+	isLiked, isDisliked, _ := checkUserLikeDislike(userID, postID)
+	data.IsLiked = isLiked
+	data.IsDisliked = isDisliked
+
+	tmpl, err := template.ParseFiles("postPage.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	r.ParseForm()
 	action := r.FormValue("action")
 
-	// Check if the user has already liked/disliked the post
-	_, _, err := checkUserLikeDislike(userID, postID)
-	if err != nil {
-		http.Error(w, "Error checking user like/dislike", http.StatusInternalServerError)
-		return
-	}
-
-	// Handle the like/dislike action based on user's previous interaction
-	// if r.Method == http.MethodPost {
+	// Handle the like/dislike action based on user's input
 	if action == "like" {
 		err = addLike(userID, postID)
+
 		if err != nil {
 			http.Error(w, "Error adding like", http.StatusInternalServerError)
 			return
@@ -66,8 +120,14 @@ func HandleLikesDislikes(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("Like/Dislike successful!")
 
+	err = tmpl.ExecuteTemplate(w, "postPage.html", data)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
 	// Redirect back to the post page
-	postIDStr := strings.TrimPrefix(r.URL.Path, "/post-like/")
+	postIDStr = strings.TrimPrefix(r.URL.Path, "/post-like/")
 	http.Redirect(w, r, "/post/"+postIDStr, http.StatusSeeOther)
 }
 
@@ -186,4 +246,45 @@ func addDislike(userID string, postID int) error {
 		fmt.Println("Added Dislike")
 	}
 	return nil
+}
+
+func GetLikeCount(postID int, commentID int, contentType string) int {
+	var count int
+	if contentType == "post" {
+		// Query the database to get the like count for the post with the given postID
+		err := DB.QueryRow("SELECT COUNT(*) FROM postlikes WHERE user_id = ? AND post_id = ? AND type = 1", userID, postID).Scan(&count)
+		if err != nil && err != sql.ErrNoRows {
+			log.Printf("Error fetching the like count")
+			// No likes found for the post
+		}
+	} else if contentType == "comments" {
+		err := DB.QueryRow("SELECT COUNT(*) FROM reactions WHERE user_id = ? AND post_id = ? AND comment_id = ? AND type = 1", userID, postID, commentID).Scan(&count)
+		if err != nil && err != sql.ErrNoRows {
+			log.Printf("Error fetching the like count")
+		}
+		// An error occurred while querying the database
+
+	}
+	return count
+}
+
+// GetDislikeCount retrieves the dislike count for a specific post from the database.
+func GetDislikeCount(postID int, commentID int, contentType string) int {
+	var count int
+	if contentType == "post" {
+		// Query the database to get the like count for the post with the given postID
+		err := DB.QueryRow("SELECT COUNT(*) FROM postlikes WHERE user_id = ? AND post_id = ? AND type = -1", userID, postID).Scan(&count)
+		if err != nil && err != sql.ErrNoRows {
+			log.Printf("Error fetching the dislike count")
+			// No likes found for the post
+		}
+	} else if contentType == "comments" {
+		err := DB.QueryRow("SELECT COUNT(*) FROM reactions WHERE user_id = ? AND post_id = ? AND comment_id = ? AND type = -1", userID, postID, commentID).Scan(&count)
+		if err != nil && err != sql.ErrNoRows {
+			log.Printf("Error fetching the dislike count")
+		}
+		// An error occurred while querying the database
+
+	}
+	return count
 }
