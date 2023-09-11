@@ -3,7 +3,6 @@ package forum
 import (
 	"database/sql"
 	"log"
-	
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -12,20 +11,21 @@ var DB *sql.DB
 
 // struct for individual posts
 type Post struct {
-	id      string
-	Title   string
-	Content string
-	Time    string
-	URL     string
+	ID         string
+	Title      string
+	Content    string
+	Time       string
+	LikesCount int
+	URL        string
 	// Author  string
 }
 
 // struct for comments
 type Comment struct {
 	UserID  string //
-	PostID string //
-	Content string  
-	Time    string 
+	PostID  string //
+	Content string
+	Time    string
 	// Author  string
 }
 

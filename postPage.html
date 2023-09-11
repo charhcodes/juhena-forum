@@ -8,6 +8,9 @@
     <div class="postContainer">
         <h2>{{.Post.Title}}</h2>
         <p>{{.Post.Content}}</p>
+
+        <p>Likes: {{ .LikesCount}} </p>
+
         <form action="/post-like/{{ .PostID }}" method="POST">
             <input type="hidden" name="action" value="like">
             <button type="submit">Like</button>
@@ -16,6 +19,7 @@
             <input type="hidden" name="action" value="dislike">
             <button type="submit">Dislike</button>
         </form>
+        
     </div>
     
     <!-- <div class="postContainer">

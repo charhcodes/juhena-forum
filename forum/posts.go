@@ -106,9 +106,9 @@ func GetCookieValue(r *http.Request) (string, string, error) {
 // get post ID
 func getPostByID(postID string) (*Post, error) {
 	//added
-	row := DB.QueryRow("SELECT id, title, content, created_at FROM posts WHERE id = ?", postID)
+	row := DB.QueryRow("SELECT id, title, content, created_at, likes_count FROM posts WHERE id = ?", postID)
 	var post Post
-	err := row.Scan(&post.id, &post.Title, &post.Content, &post.Time)
+	err := row.Scan(&post.ID, &post.Title, &post.Content, &post.Time, &post.LikesCount)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errors.New("post not found")
@@ -122,7 +122,7 @@ func getPostByID(postID string) (*Post, error) {
 	}
 	post.Time = t.Format("January 2, 2006, 15:04:05")
 	// make post URLs
-	post.URL = "/post/" + post.id
+	post.URL = "/post/" + post.ID
 	return &post, nil
 }
 
@@ -163,9 +163,6 @@ func PostPageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var comments []Comment
-	// Assuming you have a function to retrieve the logged-in user's ID, if available
-	// If not, you can set it to a default value or handle it as you see fit.
-	// userID := "user1"
 
 	// Get the post data by calling the getPostByID function or fetching it from the database
 	post, err := getPostByID(postIDStr)
@@ -173,6 +170,10 @@ func PostPageHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
+
+	// Get the likes count from the post variable
+	likesCount := post.LikesCount
+
 	//get comments by postID -
 	comments, err = getCommentsByPostID(postIDStr)
 	if err != nil {
@@ -185,6 +186,7 @@ func PostPageHandler(w http.ResponseWriter, r *http.Request) {
 		PostID   int
 		Post     Post
 		Comments []Comment
+		Likes    int
 		Success  bool // Add the Success field to indicate if the comment was successfully posted
 	}
 
@@ -192,6 +194,7 @@ func PostPageHandler(w http.ResponseWriter, r *http.Request) {
 	data.Post = *post // Use the dereferenced post pointer
 	data.Comments = comments
 	data.Success = r.URL.Query().Get("success") == "1"
+	data.Likes = likesCount
 
 	tmpl, err := template.ParseFiles("postPage.html")
 	if err != nil {
@@ -200,10 +203,10 @@ func PostPageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Render the template with the data
+	// ! error flag
 	err = tmpl.ExecuteTemplate(w, "postPage.html", data)
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error - posts", http.StatusInternalServerError)
 		return
 	}
-
 }

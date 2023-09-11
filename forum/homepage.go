@@ -18,7 +18,7 @@ func executePosts() ([]Post, error) {
 
 	for rows.Next() {
 		var post Post
-		err := rows.Scan(&post.id, &post.Title, &post.Content, &post.Time)
+		err := rows.Scan(&post.ID, &post.Title, &post.Content, &post.Time)
 		if err != nil {
 			return nil, err
 		}
@@ -29,7 +29,7 @@ func executePosts() ([]Post, error) {
 		}
 		post.Time = t.Format("January 2, 2006, 15:04:05")
 		// make post URLs
-		post.URL = "/post/" + post.id
+		post.URL = "/post/" + post.ID
 		posts = append(posts, post)
 	}
 	if err = rows.Err(); err != nil {
@@ -104,7 +104,7 @@ func FilteredPostsHandler(w http.ResponseWriter, r *http.Request) {
 	// Render the template with the filtered posts data
 	err = tmpl.ExecuteTemplate(w, "filteredPosts.html", data)
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error - homepage", http.StatusInternalServerError)
 		return
 	}
 }
@@ -141,7 +141,7 @@ func getPostsByCategory(category string) ([]Post, error) {
 
 	for rows.Next() {
 		var post Post
-		err := rows.Scan(&post.id, &post.Title, &post.Content, &post.Time)
+		err := rows.Scan(&post.ID, &post.Title, &post.Content, &post.Time)
 		if err != nil {
 			return nil, err
 		}
@@ -154,7 +154,7 @@ func getPostsByCategory(category string) ([]Post, error) {
 		post.Time = t.Format("January 2, 2006, 15:04:05")
 
 		// make post URLs
-		post.URL = "/post/" + post.id
+		post.URL = "/post/" + post.ID
 
 		posts = append(posts, post)
 	}

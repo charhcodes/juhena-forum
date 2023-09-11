@@ -71,29 +71,6 @@ func HandleLikesDislikes(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/post/"+postIDStr, http.StatusSeeOther)
 }
 
-// Other database functions (e.g., addLike, removeLike, checkUserLikeDislike) should be implemented accordingly.
-
-// checkUserLikeDislike checks if a user has already liked or disliked a post.
-// func checkUserLikeDislike(userID string, postID int) (liked bool, disliked bool, err error) {
-// 	// Execute a query to check if the user has liked the post
-// 	row := DB.QueryRow("SELECT COUNT(*) FROM postlikes WHERE user_id = ? AND post_id = ? AND type = 1", userID, postID)
-// 	var likeCount int
-// 	if err := row.Scan(&likeCount); err != nil {
-// 		return false, false, err
-// 	}
-// 	liked = likeCount > 0
-
-// 	// Execute a query to check if the user has disliked the post
-// 	row = DB.QueryRow("SELECT COUNT(*) FROM postlikes WHERE user_id = ? AND post_id = ? AND type = -1", userID, postID)
-// 	var dislikeCount int
-// 	if err := row.Scan(&dislikeCount); err != nil {
-// 		return false, false, err
-// 	}
-// 	disliked = dislikeCount > 0
-
-// 	return liked, disliked, nil
-// }
-
 func checkUserLikeDislike(userID string, postID int) (liked bool, disliked bool, err error) {
 	// Execute a query to check if the user has liked or disliked the post
 	row := DB.QueryRow("SELECT COUNT(*) FROM postlikes WHERE user_id = ? AND post_id = ? AND type = 1", userID, postID)
@@ -127,6 +104,7 @@ func checkUserLikeDislike(userID string, postID int) (liked bool, disliked bool,
 }
 
 func addLike(userID string, postID int) error {
+	// check if user has previously interacted with post
 	existingLike, existingDislike, err := checkUserLikeDislike(userID, postID)
 	if err != nil {
 		return err
@@ -154,6 +132,14 @@ func addLike(userID string, postID int) error {
 		}
 		fmt.Println("Added Like")
 	}
+
+	// Update the likes_count in the posts table
+	_, err = DB.Exec("UPDATE posts SET likes_count = likes_count + 1 WHERE id = ?", postID)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Updated likes_count for the post")
+
 	return nil
 }
 
