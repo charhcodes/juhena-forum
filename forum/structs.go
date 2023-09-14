@@ -15,7 +15,8 @@ type Post struct {
 	Title      string
 	Content    string
 	Time       string
-	LikesCount int
+	LikesCount int // added JB
+	DislikeCount int // added JB
 	URL        string
 	// Author  string
 }
@@ -36,6 +37,8 @@ type HomePageData struct {
 
 type PostPageData struct {
 	Post *Post
+	Comments []Comment  // added
+    Success  bool       // For displaying the success message 
 }
 
 // struct to contain comments

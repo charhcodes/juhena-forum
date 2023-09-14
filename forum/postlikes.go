@@ -10,14 +10,19 @@ import (
 var postID int
 var userID string
 
-func getPostID(w http.ResponseWriter, r *http.Request) int {
+func getPostID(w http.ResponseWriter, r *http.Request) (int, error) {
 	// Extract post ID from URL
 	postIDStr := strings.TrimPrefix(r.URL.Path, "/post-like/")
 	postID, err := strconv.Atoi(postIDStr)
-	if err != nil {
-		http.Error(w, "Invalid post ID", http.StatusBadRequest)
+	if err != nil { //added JB
+		return 0, fmt.Errorf("Invalid post ID: %w", err)
 	}
-	return postID
+	return postID, nil
+
+	// if err != nil {
+	// 	http.Error(w, "Invalid post ID", http.StatusBadRequest)
+	// }
+	// return postID
 }
 
 func getUserID(w http.ResponseWriter, r *http.Request) string {
@@ -35,14 +40,20 @@ func HandleLikesDislikes(w http.ResponseWriter, r *http.Request) {
 	checkCookies(w, r)
 
 	// get postID, userID
-	postID = getPostID(w, r)
-	userID = getUserID(w, r)
+	// postID = getPostID(w, r)
+	userID := getUserID(w, r)
+
+	postID, err := getPostID(w, r) 
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	r.ParseForm()
 	action := r.FormValue("action")
 
 	// Check if the user has already liked/disliked the post
-	_, _, err := checkUserLikeDislike(userID, postID)
+	_, _, err = checkUserLikeDislike(userID, postID)
 	if err != nil {
 		http.Error(w, "Error checking user like/dislike", http.StatusInternalServerError)
 		return

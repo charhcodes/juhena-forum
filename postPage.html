@@ -9,7 +9,9 @@
         <h2>{{.Post.Title}}</h2>
         <p>{{.Post.Content}}</p>
 
-        <p>Likes: {{ .LikesCount}} </p>
+        <p>Likes: {{ .Likes }} </p>  
+
+        
 
         <form action="/post-like/{{ .PostID }}" method="POST">
             <input type="hidden" name="action" value="like">
@@ -47,17 +49,20 @@
             <input type="submit" value="Submit Comment">
         </form>
     </div>
-
+    
+    <!-- Capture the post's ID -->
+    {{ $postID := .PostID }}
+    
     <!--comments-->
     <div class="comments-container">
         <h3>Comments:</h3>
-            {{ range .Comments }}
+        {{ range .Comments }}
             <p>{{ .Content }}</p>
-            <form action="/comment-like/{{ .PostID }}" method="POST">
+            <form action="/comment-like/{{ $postID }}" method="POST">
                 <input type="hidden" name="comment-action" value="like">
                 <button type="submit">Like</button>
             </form>
-            <form action="/comment-like/{{ .PostID }}" method="POST">
+            <form action="/comment-like/{{ $postID }}" method="POST">
                 <input type="hidden" name="comment-action" value="dislike">
                 <button type="submit">Dislike</button>
             </form>
