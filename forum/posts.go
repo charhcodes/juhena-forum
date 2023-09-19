@@ -106,15 +106,26 @@ func GetCookieValue(r *http.Request) (string, string, error) {
 // get post ID
 func getPostByID(postID string) (*Post, error) {
 	//added
-	row := DB.QueryRow("SELECT id, title, content, created_at, likes_count FROM posts WHERE id = ?", postID)
+	// Adjusted the SELECT query to also get the `dislike_count`
+	row := DB.QueryRow("SELECT id, title, content, created_at, likes_count, dislikes_count FROM posts WHERE id = ?", postID)
 	var post Post
-	err := row.Scan(&post.ID, &post.Title, &post.Content, &post.Time, &post.LikesCount)
+	// Added &post.DislikeCount at the end
+	err := row.Scan(&post.ID, &post.Title, &post.Content, &post.Time, &post.LikesCount, &post.DislikeCount)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errors.New("post not found")
 		}
 		return nil, err
 	}
+	// row := DB.QueryRow("SELECT id, title, content, created_at, likes_count FROM posts WHERE id = ?", postID)
+	// var post Post
+	// err := row.Scan(&post.ID, &post.Title, &post.Content, &post.Time, &post.LikesCount)
+	// if err != nil {
+	// 	if err == sql.ErrNoRows {
+	// 		return nil, errors.New("post not found")
+	// 	}
+	// 	return nil, err
+	// }
 	// Format the datetime string
 	t, err := time.Parse("2006-01-02T15:04:05.999999999-07:00", post.Time)
 	if err != nil {
@@ -173,6 +184,7 @@ func PostPageHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Get the likes count from the post variable
 	likesCount := post.LikesCount
+	dislikeCount := post.DislikeCount
 
 	//get comments by postID -
 	comments, err = getCommentsByPostID(postIDStr)
@@ -187,6 +199,7 @@ func PostPageHandler(w http.ResponseWriter, r *http.Request) {
 		Post     Post
 		Comments []Comment
 		Likes    int
+		Dislikes int
 		Success  bool // Add the Success field to indicate if the comment was successfully posted
 	}
 
@@ -195,6 +208,10 @@ func PostPageHandler(w http.ResponseWriter, r *http.Request) {
 	data.Comments = comments
 	data.Success = r.URL.Query().Get("success") == "1"
 	data.Likes = likesCount
+	data.Dislikes = dislikeCount
+
+	fmt.Println(likesCount, "likes count")
+	fmt.Println(dislikeCount, "dislike count")
 
 	tmpl, err := template.ParseFiles("postPage.html")
 	if err != nil {

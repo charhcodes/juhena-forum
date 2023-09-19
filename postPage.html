@@ -1,17 +1,18 @@
 <!DOCTYPE html>
 <head>
     <title>{{.Post.Title}}</title>
+    <link rel="stylesheet" type="text/css" href="/style.css">
 </head>
 <body>
-    <h1>my forum</h1>
+    <h1>My Forum</h1>
     <!--post details-->
     <div class="postContainer">
         <h2>{{.Post.Title}}</h2>
         <p>{{.Post.Content}}</p>
 
         <p>Likes: {{ .Likes }} </p>  
+        <p>Dislikes: {{ .Dislikes }} </p>
 
-        
 
         <form action="/post-like/{{ .PostID }}" method="POST">
             <input type="hidden" name="action" value="like">
@@ -23,18 +24,6 @@
         </form>
         
     </div>
-    
-    <!-- <div class="postContainer">
-        <h2>{{.Post.Title}}</h2>
-        <p>{{.Post.Content}}</p>
-        <h3>Likes:</h3>
-        <form action="/post-like/{{ .PostID }}" id="like-button" method="POST">
-           <button>Like</button>
-        </form>
-        <form action="/post-dislike/{{ .PostID }}" id="dislike-button" method="POST">
-            <button>Dislike</button>
-        </form>
-    </div> -->
 
     {{ if .Success }}
     <p>Comment successfully posted!</p>

@@ -39,16 +39,17 @@ func HandleLikesDislikes(w http.ResponseWriter, r *http.Request) {
 	// Check session cookie
 	checkCookies(w, r)
 
-	// get postID, userID
-	// postID = getPostID(w, r)
+	// Get userID
 	userID := getUserID(w, r)
 
-	postID, err := getPostID(w, r) 
+	// Get postID
+	postID, err := getPostID(w, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
+	// Parse form data to retrieve the 'action' field
 	r.ParseForm()
 	action := r.FormValue("action")
 
@@ -60,7 +61,6 @@ func HandleLikesDislikes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Handle the like/dislike action based on user's previous interaction
-	// if r.Method == http.MethodPost {
 	if action == "like" {
 		err = addLike(userID, postID)
 		if err != nil {
@@ -75,12 +75,65 @@ func HandleLikesDislikes(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	fmt.Println("Like/Dislike successful!")
+	// Update the total likes and dislikes counts after the action is handled
+	err = addTotalLikesDislikes(postID)
+	if err != nil {
+		http.Error(w, "Error updating total likes and dislikes", http.StatusInternalServerError)
+		return
+	}
 
 	// Redirect back to the post page
 	postIDStr := strings.TrimPrefix(r.URL.Path, "/post-like/")
 	http.Redirect(w, r, "/post/"+postIDStr, http.StatusSeeOther)
 }
+
+// // Handler for handling like and dislike actions
+// func HandleLikesDislikes(w http.ResponseWriter, r *http.Request) {
+// 	// Check session cookie
+// 	checkCookies(w, r)
+
+// 	// get postID, userID
+// 	// postID = getPostID(w, r)
+// 	userID := getUserID(w, r)
+
+// 	postID, err := getPostID(w, r)
+// 	if err != nil {
+// 		http.Error(w, err.Error(), http.StatusBadRequest)
+// 		return
+// 	}
+
+// 	r.ParseForm()
+// 	action := r.FormValue("action")
+
+// 	// Check if the user has already liked/disliked the post
+// 	_, _, err = checkUserLikeDislike(userID, postID)
+// 	if err != nil {
+// 		http.Error(w, "Error checking user like/dislike", http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	// Handle the like/dislike action based on user's previous interaction
+// 	// if r.Method == http.MethodPost {
+// 	if action == "like" {
+// 		err = addLike(userID, postID)
+// 		if err != nil {
+// 			http.Error(w, "Error adding like", http.StatusInternalServerError)
+// 			return
+// 		}
+// 	} else if action == "dislike" {
+// 		err = addDislike(userID, postID)
+// 		if err != nil {
+// 			http.Error(w, "Error adding dislike", http.StatusInternalServerError)
+// 			return
+// 		}
+// 	}
+
+// 	fmt.Println("Like/Dislike successful!")
+
+// 	// Redirect back to the post page
+// 	postIDStr := strings.TrimPrefix(r.URL.Path, "/post-like/")
+// 	http.Redirect(w, r, "/post/"+postIDStr, http.StatusSeeOther)
+// }
 
 func checkUserLikeDislike(userID string, postID int) (liked bool, disliked bool, err error) {
 	// Execute a query to check if the user has liked or disliked the post
@@ -152,9 +205,11 @@ func addLike(userID string, postID int) error {
 	fmt.Println("Updated likes_count for the post")
 
 	return nil
+
 }
 
 func addDislike(userID string, postID int) error {
+
 	existingLike, existingDislike, err := checkUserLikeDislike(userID, postID)
 	if err != nil {
 		return err
@@ -184,3 +239,79 @@ func addDislike(userID string, postID int) error {
 	}
 	return nil
 }
+
+// create a function to add total likes from the database postlikes table
+func getTotalLikes(postID int) (int, error) {
+	//from the postlikes table, get the total number of likes for a post
+	row := DB.QueryRow("SELECT COUNT(*) FROM postlikes WHERE post_id = ? AND type = 1", postID)
+	var likeCount int
+	if err := row.Scan(&likeCount); err != nil {
+		return 0, err
+	}
+	return likeCount, nil
+}
+
+// create a function to add total dislikes from the database postlikes table
+func getTotalDislikes(postID int) (int, error) {
+	//from the postlikes table, get the total number of dislikes for a post
+	row := DB.QueryRow("SELECT COUNT(*) FROM postlikes WHERE post_id = ? AND type = -1", postID)
+	var dislikeCount int
+	if err := row.Scan(&dislikeCount); err != nil {
+		return 0, err
+	}
+	return dislikeCount, nil
+}
+
+// adds total likes to the likes_count column in the posts table and total dislikes to the dislikes_count column in the posts table
+func addTotalLikesDislikes(postID int) error {
+	//get the total number of likes for a post
+	likeCount, err := getTotalLikes(postID)
+	if err != nil {
+		return err
+	}
+	// total number of dislikes for a post
+	dislikeCount, err := getTotalDislikes(postID)
+	if err != nil {
+		return err
+	}
+	//total number of likes to the likes_count column in the posts table
+	_, err = DB.Exec("UPDATE posts SET likes_count = ? WHERE id = ?", likeCount, postID)
+	fmt.Println(likeCount, "likes count database")
+	if err != nil {
+		return err
+	}
+	//the total number of dislikes to the dislikes_count column and return the count
+	_, err = DB.Exec("UPDATE posts SET dislikes_count = ? WHERE id = ?", dislikeCount, postID)
+	fmt.Println(dislikeCount, "dislikes count database")
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+// func getDislikesCount(postID int) (int, error) {
+// 	row := DB.QueryRow("SELECT dislikes_count FROM posts WHERE id = ?", postID)
+// 	var dislikeCount int
+// 	if err := row.Scan(&dislikeCount); err != nil {
+// 		return 0, err
+// 	}
+// 	return dislikeCount, nil
+// }
+
+// func DisplayDislikeCountHandler(w http.ResponseWriter, r *http.Request) {
+//     // 1. Retrieve the Post ID
+//     postID, err := getPostID(w, r)
+//     if err != nil {
+//         http.Error(w, err.Error(), http.StatusBadRequest)
+//         return
+//     }
+//     
+//     dislikeCount, err := getDislikesCount(postID)
+//     if err != nil {
+//         http.Error(w, "Failed to get dislike count", http.StatusInternalServerError)
+//         return
+//     }
+//     response := fmt.Sprintf("The post with ID %d has %d dislikes.", postID, dislikeCount)
+//     w.Write([]byte(response))
+// }
+
