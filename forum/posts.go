@@ -206,7 +206,7 @@ func PostPageHandler(w http.ResponseWriter, r *http.Request) {
 	// ! error flag
 	err = tmpl.ExecuteTemplate(w, "postPage.html", data)
 	if err != nil {
-		http.Error(w, "Internal Server Error - posts", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
