@@ -52,6 +52,10 @@ func reverse(s []Post) []Post {
 
 // serve homepage
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
+	// Check if the user is already logged in
+	existingSessionID, _ := r.Cookie("session")
+	isLoggedIn := existingSessionID != nil
+
 	posts, err := executePosts()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -59,7 +63,8 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := HomePageData{
-		Posts: posts,
+		Posts:      posts,
+		IsLoggedIn: isLoggedIn, // Pass the IsLoggedIn information to the template
 	}
 
 	tmpl, err := template.ParseFiles("home.html")
@@ -75,7 +80,6 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// handle filtered posts
 // handle filtered posts
 func FilteredPostsHandler(w http.ResponseWriter, r *http.Request) {
 	category := r.URL.Query().Get("category")
@@ -108,26 +112,6 @@ func FilteredPostsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
-
-// retrieve posts by their category
-// func getPostsByCategory(category string) (*Post, error) {
-// 	//added
-// 	rows := DB.QueryRow("SELECT id, title, content, created_at FROM posts WHERE category_id = ?", category)
-// 	var posts Post
-// 	err := rows.Scan(&posts.id, &posts.Title, &posts.Content, &posts.Time)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	// Format the datetime string
-// 	t, err := time.Parse("2006-01-02T15:04:05.999999999-07:00", posts.Time)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	posts.Time = t.Format("January 2, 2006, 15:04:05")
-// 	// make post URLs
-// 	posts.URL = "/post/" + posts.id
-// 	return &posts, nil
-// }
 
 // retrieve posts by their category
 func getPostsByCategory(category string) ([]Post, error) {

@@ -1,0 +1,13 @@
+welcome to our dookie forum
+this is a chat-based forum that allows users to login, register, create text posts and interact with them by liking, disliking or commenting.
+
+recent changes as of 21/09:
+- changed session cookie logic so that new session IDs are generated everytime a user registers or logs in, including when they login using the same account (even on another browser) 
+(see registration.go: clearSessionFromDB, LogoutHandler and LoginHandler functions)
+- added a logout button. button only appears when the user is already logged in (see IsLoggedIn in home.html and homepage.go)
+- added login and register buttons to register.html and login.html respectively. for some reason these buttons don't always show up, it seems to be more reliable in appearing once the user has already logged in, logged out, and would like to log in once more. not that deep, but worth a look at imo
+
+
+* i need to make it so that we force old sessions to log out when their cookies expire or when the user logs in in another browser, this will be implemented soon
+
+

@@ -13,6 +13,12 @@
                 <button class="register-button">Register</button>
             </form>
         </div>
+        {{if .IsLoggedIn}}
+        <!-- Render the logout button if the user is logged in -->
+            <form action="/logout" method="post">
+                <button type="submit">Logout</button>
+            </form>
+        {{end}}
         <!--navigation header-->
         <br>
         <form action="/filtered-posts" method="GET">
