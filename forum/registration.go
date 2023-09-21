@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	// "github.com/google/uuid"
@@ -82,44 +81,23 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-// func removeOldSession(sessionCookieValue string) {
-// 	// Split the sessionCookieValue to get the session ID
-// 	parts := strings.Split(sessionCookieValue, "&")
-// 	if len(parts) != 2 {
-// 		// Invalid session cookie format
-// 		return
-// 	}
-
-// 	sessionID := parts[0]
-
-// 	// Implement code to remove or invalidate the old session in your database
-// 	query := "DELETE FROM Users WHERE SessionID = ?"
-// 	_, err := DB.Exec(query, sessionID)
-// 	if err != nil {
-// 		// Handle the error, e.g., log it
-// 		log.Println("Error removing old session:", err)
-// 	}
-// }
-
 // handle login + session cookies
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	// Check if the user already has an active session
 	existingSessionID, _ := r.Cookie("session")
 	if existingSessionID != nil {
-		LogoutHandler(w, r)
+		// LogoutHandler(w, r)
+		// Add your logout logic here if needed
+		fmt.Println("User already has an active session")
 	}
-
-	// Generate a new session ID
-	newSessionID := generateUserID(10)
-	fmt.Println(newSessionID)
 
 	if r.Method == http.MethodGet {
 		http.ServeFile(w, r, "login.html")
 		return
 	}
 
-	if r.Method == http.MethodGet {
-		http.ServeFile(w, r, "login.html")
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -134,6 +112,20 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if email == "" || password == "" {
 		http.Error(w, "Please fill out all fields", http.StatusBadRequest)
 		return
+	}
+
+	// Check if there is an existing session for this email in the database
+	var existingSessionIDDB string
+	err = DB.QueryRow("SELECT SessionID FROM Users WHERE Email = ?", email).Scan(&existingSessionIDDB)
+	if err != nil && err != sql.ErrNoRows {
+		log.Println(err)
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+
+	if existingSessionIDDB != "" {
+		// Clear the existing session data from the database
+		clearSessionFromDB(existingSessionIDDB)
 	}
 
 	var userId int
@@ -155,36 +147,18 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// check if sessionID already exists
-	// query := "SELECT COUNT(*) FROM Users WHERE Email = ? AND sessionID = ?"
+	// Generate a new session ID
+	newSessionID := generateUserID(10)
+	fmt.Printf("loginhandler session id: %v\n", newSessionID)
 
-	// var count int
-	// err = DB.QueryRow(query, email, newSessionID).Scan(&count)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return
-	// }
-
-	// // if sessionID already exists, user stays logged in
-	// if count > 0 {
-	// 	fmt.Printf("SessionID '%s' exists for Email '%s'\n", newSessionID, email)
-	// } else { // if sessionID does not exist, user is logged out
-	// 	fmt.Printf("SessionID '%s' does not exist for Email '%s'\n", newSessionID, email)
-	// }
-
-	// insert session ID into database
+	// Insert session ID into the database
 	_, err = DB.Exec("UPDATE Users SET SessionID = ? WHERE Email = ?", newSessionID, email)
+	fmt.Println("Session ID logged")
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	// // Set browser cookies to store login
-	// http.SetCookie(w, &http.Cookie{
-	// 	Name:  "user",
-	// 	Value: email,
-	// })
 
 	// Store the new session ID in a cookie
 	http.SetCookie(w, &http.Cookie{
@@ -193,31 +167,17 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		Expires: time.Now().Add(1 * time.Hour),
 		Path:    "/",
 	})
+	fmt.Println("Session ID stored, user logged in successfully")
 
 	// Redirect the user to the homepage
 	http.Redirect(w, r, "/", http.StatusFound)
-
-	// // Create a new cookie with the session ID
-	// cookie := http.Cookie{
-	// 	Name:    "session",
-	// 	Value:   newSessionID + "&" + strconv.Itoa(userId),
-	// 	Expires: time.Now().Add(1 * time.Hour), // Extend cookie expiration time
-	// 	Path:    "/",
-	// }
-
-	// Set the cookie in the response headers
-	// http.SetCookie(w, &cookie)
-
-	// Redirect the user to the homepage
-	// http.Redirect(w, r, "/", http.StatusFound)
 }
 
-// handle logging out
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	// Clear the session data from the database
 	sessionCookie, err := r.Cookie("session")
 	if err == nil {
-		sessionID := strings.Split(sessionCookie.Value, "&")[0]
+		sessionID := sessionCookie.Value
 		clearSessionFromDB(sessionID)
 	}
 
@@ -235,6 +195,7 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 		Path:   "/",
 	})
 
+	fmt.Println("User successfully logged out")
 	// Redirect the user to the login page
 	http.Redirect(w, r, "/login", http.StatusFound)
 }
@@ -248,4 +209,5 @@ func clearSessionFromDB(sessionID string) {
 		// Handle the error, e.g., log it
 		log.Println("Error clearing session from the database:", err)
 	}
+	fmt.Println("Session ID cleared successfully")
 }

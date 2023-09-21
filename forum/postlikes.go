@@ -180,21 +180,21 @@ func addLike(userID string, postID int) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println("Replaced Dislike with Like")
+		// fmt.Println("Replaced Dislike with Like")
 	} else if existingLike {
 		// Toggle value '1' to '0'
 		_, err = DB.Exec("UPDATE postlikes SET type = 0 WHERE user_id = ? AND post_id = ?", userID, postID)
 		if err != nil {
 			return err
 		}
-		fmt.Println("Toggled Like to Neither")
+		// fmt.Println("Toggled Like to Neither")
 	} else {
 		// Insert new entry with value '1'
 		_, err = DB.Exec("INSERT INTO postlikes (user_id, post_id, type) VALUES (?, ?, 1)", userID, postID)
 		if err != nil {
 			return err
 		}
-		fmt.Println("Added Like")
+		// fmt.Println("Added Like")
 	}
 
 	// Update the likes_count in the posts table
@@ -202,7 +202,7 @@ func addLike(userID string, postID int) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Updated likes_count for the post")
+	// fmt.Println("Updated likes_count for the post")
 
 	return nil
 
@@ -221,21 +221,21 @@ func addDislike(userID string, postID int) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println("Replaced Like with Dislike")
+		// fmt.Println("Replaced Like with Dislike")
 	} else if existingDislike {
 		// Toggle value '-1' to '0'
 		_, err = DB.Exec("UPDATE postlikes SET type = 0 WHERE user_id = ? AND post_id = ?", userID, postID)
 		if err != nil {
 			return err
 		}
-		fmt.Println("Toggled Dislike to Neither")
+		// fmt.Println("Toggled Dislike to Neither")
 	} else {
 		// Insert new entry with value '-1'
 		_, err = DB.Exec("INSERT INTO postlikes (user_id, post_id, type) VALUES (?, ?, -1)", userID, postID)
 		if err != nil {
 			return err
 		}
-		fmt.Println("Added Dislike")
+		// fmt.Println("Added Dislike")
 	}
 	return nil
 }
@@ -276,19 +276,20 @@ func addTotalLikesDislikes(postID int) error {
 	}
 	//total number of likes to the likes_count column in the posts table
 	_, err = DB.Exec("UPDATE posts SET likes_count = ? WHERE id = ?", likeCount, postID)
-	fmt.Println(likeCount, "likes count database")
+	// fmt.Println(likeCount, "likes count database")
 	if err != nil {
 		return err
 	}
 	//the total number of dislikes to the dislikes_count column and return the count
 	_, err = DB.Exec("UPDATE posts SET dislikes_count = ? WHERE id = ?", dislikeCount, postID)
-	fmt.Println(dislikeCount, "dislikes count database")
+	// fmt.Println(dislikeCount, "dislikes count database")
 	if err != nil {
 		return err
 	}
 	return nil
 
 }
+
 // func getDislikesCount(postID int) (int, error) {
 // 	row := DB.QueryRow("SELECT dislikes_count FROM posts WHERE id = ?", postID)
 // 	var dislikeCount int
@@ -305,7 +306,7 @@ func addTotalLikesDislikes(postID int) error {
 //         http.Error(w, err.Error(), http.StatusBadRequest)
 //         return
 //     }
-//     
+//
 //     dislikeCount, err := getDislikesCount(postID)
 //     if err != nil {
 //         http.Error(w, "Failed to get dislike count", http.StatusInternalServerError)
@@ -314,4 +315,3 @@ func addTotalLikesDislikes(postID int) error {
 //     response := fmt.Sprintf("The post with ID %d has %d dislikes.", postID, dislikeCount)
 //     w.Write([]byte(response))
 // }
-

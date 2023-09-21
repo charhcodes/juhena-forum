@@ -54,6 +54,7 @@ func reverse(s []Post) []Post {
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	// Check if the user is already logged in
 	existingSessionID, _ := r.Cookie("session")
+	// if isLoggedIn is true, a logout button will show on the page
 	isLoggedIn := existingSessionID != nil
 
 	posts, err := executePosts()

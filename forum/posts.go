@@ -210,8 +210,8 @@ func PostPageHandler(w http.ResponseWriter, r *http.Request) {
 	data.Likes = likesCount
 	data.Dislikes = dislikeCount
 
-	fmt.Println(likesCount, "likes count")
-	fmt.Println(dislikeCount, "dislike count")
+	// fmt.Println(likesCount, "likes count")
+	// fmt.Println(dislikeCount, "dislike count")
 
 	tmpl, err := template.ParseFiles("postPage.html")
 	if err != nil {
