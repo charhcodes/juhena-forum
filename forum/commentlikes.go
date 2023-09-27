@@ -264,38 +264,3 @@ func updateCommentDislikesCount(postID int, commentID int) error {
 	return nil
 }
 
-//i need a function that calculates total likes from the reactions table type coloumn and updates the comments table commentlikes_count coloumn. the same person cannot like the same comment twice
-// func updateCommentLikesCount(postID int, commentID int) error {
-// 	// Query to calculate total likes from the reactions table
-// 	row := DB.QueryRow("SELECT COUNT(*) FROM reactions WHERE post_id = ? AND comment_id = ? AND type = 1", postID, commentID)
-// 	var likeCount int
-// 	if err := row.Scan(&likeCount); err != nil {
-// 		return err
-// 	}
-
-// 	// Update the comments table
-// 	_, err := DB.Exec("UPDATE comments SET commentlikes_count = ? WHERE post_id = ? AND id = ?", likeCount, postID, commentID)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	fmt.Println("Updated commentlikes_count for the comment")
-// 	return nil
-// }
-
-// // Similarly for dislikes
-// func updateCommentDislikesCount(postID int, commentID int) error {
-// 	// Query to calculate total dislikes from the reactions table
-// 	row := DB.QueryRow("SELECT COUNT(*) FROM reactions WHERE post_id = ? AND comment_id = ? AND type = -1", postID, commentID)
-// 	var dislikeCount int
-// 	if err := row.Scan(&dislikeCount); err != nil {
-// 		return err
-// 	}
-
-// 	// Update the comments table
-// 	_, err := DB.Exec("UPDATE comments SET commentdislikes_count = ? WHERE post_id = ? AND id = ?", dislikeCount, postID, commentID)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	fmt.Println("Updated commentdislikes_count for the comment")
-// 	return nil
-// }
