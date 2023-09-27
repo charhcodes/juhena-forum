@@ -139,7 +139,7 @@ func getPostByID(postID string) (*Post, error) {
 
 func getCommentsByPostID(postID string) ([]Comment, error) {
 	comments := []Comment{} // creating an empty slice to store comments from the database //i've also added postID and userID to the comment struct
-	rows, err := DB.Query("SELECT user_id, post_id, content, created_at FROM comments WHERE post_id = ?", postID)
+	rows, err := DB.Query("SELECT id, user_id, post_id, content, created_at, commentlikes_count, commentdislikes_count FROM comments WHERE post_id = ?", postID)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +147,7 @@ func getCommentsByPostID(postID string) ([]Comment, error) {
 
 	for rows.Next() {
 		var comment Comment
-		err := rows.Scan(&comment.UserID, &comment.PostID, &comment.Content, &comment.Time)
+		err := rows.Scan(&comment.CommentID, &comment.UserID, &comment.PostID, &comment.Content, &comment.Time, &comment.LikesCount, &comment.DislikeCount)
 		if err != nil {
 			return nil, err
 		}
@@ -210,8 +210,10 @@ func PostPageHandler(w http.ResponseWriter, r *http.Request) {
 	data.Likes = likesCount
 	data.Dislikes = dislikeCount
 
-	fmt.Println(likesCount, "likes count")
-	fmt.Println(dislikeCount, "dislike count")
+	fmt.Printf("%+v\n", data.Comments)
+
+	// fmt.Println(likesCount, "plikes count")
+	// fmt.Println(dislikeCount, "pdislike count")
 
 	tmpl, err := template.ParseFiles("postPage.html")
 	if err != nil {

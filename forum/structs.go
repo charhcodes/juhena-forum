@@ -11,13 +11,13 @@ var DB *sql.DB
 
 // struct for individual posts
 type Post struct {
-	ID           string
-	Title        string
-	Content      string
-	Time         string
-	LikesCount   int // added JB
+	ID         string
+	Title      string
+	Content    string
+	Time       string
+	LikesCount int // added JB
 	DislikeCount int // added JB
-	URL          string
+	URL        string
 	// Author  string
 }
 
@@ -26,20 +26,23 @@ type Comment struct {
 	UserID  string //
 	PostID  string //
 	Content string
+	CommentID string
 	Time    string
+	LikesCount int // added JB
+	DislikeCount int // added JB
+	
 	// Author  string
 }
 
 // struct for posts
 type HomePageData struct {
-	Posts      []Post // Replace with your actual Post type
-	IsLoggedIn bool   // Add this field to indicate whether the user is logged in
+	Posts []Post
 }
 
 type PostPageData struct {
-	Post     *Post
-	Comments []Comment // added
-	Success  bool      // For displaying the success message
+	Post *Post
+	Comments []Comment  // added
+    Success  bool       // For displaying the success message 
 }
 
 // struct to contain comments

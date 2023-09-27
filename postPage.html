@@ -46,14 +46,19 @@
     <div class="comments-container">
         <h3>Comments:</h3>
         {{ range .Comments }}
+     
             <p>{{ .Content }}</p>
+            <p>Like {{.LikesCount }}</p>
+            <p>Dislike {{ .DislikeCount }}</p>
             <form action="/comment-like/{{ $postID }}" method="POST">
                 <input type="hidden" name="comment-action" value="like">
-                <button type="submit">Like</button>
+                <input type="text" name="reaction-id" hidden value={{.CommentID}} >
+                <button type="submit" >Like </button>
             </form>
             <form action="/comment-like/{{ $postID }}" method="POST">
                 <input type="hidden" name="comment-action" value="dislike">
-                <button type="submit">Dislike</button>
+                <input type="text" name="reaction-id" hidden value={{.CommentID}} >
+                <button type="submit" value={{.CommentID}}>Dislike </button>
             </form>
             <p>Posted at: {{ .Time }}</p>
         {{ end }}

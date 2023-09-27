@@ -7,8 +7,8 @@ import (
 	"strings"
 )
 
-var postID int
-var userID string
+// var postID int
+// var userID string
 
 func getPostID(w http.ResponseWriter, r *http.Request) (int, error) {
 	// Extract post ID from URL
@@ -289,6 +289,7 @@ func addTotalLikesDislikes(postID int) error {
 	return nil
 
 }
+
 // func getDislikesCount(postID int) (int, error) {
 // 	row := DB.QueryRow("SELECT dislikes_count FROM posts WHERE id = ?", postID)
 // 	var dislikeCount int
@@ -305,7 +306,7 @@ func addTotalLikesDislikes(postID int) error {
 //         http.Error(w, err.Error(), http.StatusBadRequest)
 //         return
 //     }
-//     
+//
 //     dislikeCount, err := getDislikesCount(postID)
 //     if err != nil {
 //         http.Error(w, "Failed to get dislike count", http.StatusInternalServerError)
@@ -314,4 +315,3 @@ func addTotalLikesDislikes(postID int) error {
 //     response := fmt.Sprintf("The post with ID %d has %d dislikes.", postID, dislikeCount)
 //     w.Write([]byte(response))
 // }
-

@@ -1,0 +1,3 @@
+//create a column on comment database for likes_count, dislikes_count
+//add to sqlite function the 
+//

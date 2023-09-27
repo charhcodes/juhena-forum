@@ -9,6 +9,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+
+
 func main() {
 	// var err error
 	// forum.DB, err = sql.Open("sqlite3", "./database.db")
@@ -29,9 +31,9 @@ func main() {
 	http.HandleFunc("/post/", forum.PostPageHandler)
 	http.HandleFunc("/post-comment/", forum.PostCommentHandler)
 	http.HandleFunc("/post-like/", forum.HandleLikesDislikes)
+	// http.HandleFunc("/comment-like/{postId}/{commentId}", forum.CommentLikesHandler)
 	http.HandleFunc("/comment-like/", forum.CommentLikesHandler)
 	http.HandleFunc("/filtered-posts", forum.FilteredPostsHandler)
-	http.HandleFunc("/logout", forum.LogoutHandler)
 	// http.HandleFunc("/display-dislike-count", forum.DisplayDislikeCountHandler)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
