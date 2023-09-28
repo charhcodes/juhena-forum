@@ -14,8 +14,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// check cookies to see if user is logged in properly
-func checkCookies(w http.ResponseWriter, r *http.Request) {
+// DEPRECATED
+func redirectIfNotLoggedIn(w http.ResponseWriter, r *http.Request) {
 	sessionCookie, err := r.Cookie("session")
 	if err != nil {
 		// If there is an error, it means the session cookie was not found
@@ -34,12 +34,37 @@ func checkCookies(w http.ResponseWriter, r *http.Request) {
 
 // CREATE POSTS FUNCTION
 func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
-	// Check session cookie
-	checkCookies(w, r)
-
 	if r.Method == http.MethodGet {
+		categories, err := getCategories()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var data struct {
+			Categories []Category
+		}
+		data.Categories = categories
 		// Serve create post page
-		http.ServeFile(w, r, "createPost.html")
+		tmpl, err := template.ParseFiles("createPost.html")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		err = tmpl.Execute(w, data)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		return
+	}
+
+	// Check session cookie
+	sessionID := GetSessionIDFromRequest(r)
+	isLoggedIn := sessionID != ""
+	if !isLoggedIn {
+		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
 
@@ -49,8 +74,9 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, userId, err := GetCookieValue(r)
+	userId, err := getUserIDFromSessionID(sessionID)
 	if err != nil {
+		fmt.Printf("failed to get user id from session id: %s\n", err.Error())
 		http.Error(w, "cookie not found", http.StatusBadRequest)
 		return
 	}
@@ -64,35 +90,44 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get selected categories
-	categories := r.Form["checkboxes"]
-
-	// Convert categories to a comma-separated string
-	categoriesString := strings.Join(categories, ",")
-	fmt.Printf("Post categories: %s\n", categoriesString)
-
-	// dateCreated := time.Now()
-
-	// _, err = DB.Exec("INSERT INTO posts (title, content, category_id, created_at) VALUES (?, ?, ?, ?)", titleContent, postContent, categoriesString, dateCreated)
-	// if err != nil {
-	// 	log.Println(err)
-	// 	http.Error(w, "Could not create post", http.StatusInternalServerError)
-	// 	return
-	// }
+	categories := r.Form["postCategories"]
 
 	//added
 	dateCreated := time.Now()
 	fmt.Println(userId)
-	userIdInt, err := strconv.Atoi(userId)
+	//userIdInt, err := strconv.Atoi(userId)
 	if err != nil {
 		http.Error(w, "Could not convert", http.StatusInternalServerError)
 		return
 	}
 	// - added placeholders and userintid
-	_, err = DB.Exec("INSERT INTO posts (user_id, title, content, category_id, created_at) VALUES (?, ?, ?, ?, ?)", userIdInt, titleContent, postContent, categoriesString, dateCreated)
+	res, err := DB.Exec("INSERT INTO posts (title, user_id, content, created_at) VALUES (?, ?, ?, ?)", titleContent, userId, postContent, dateCreated)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Could not create post", http.StatusInternalServerError)
 		return
+	}
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Could not create post", http.StatusInternalServerError)
+		return
+	}
+
+	for _, categoryID := range categories {
+		catID, err := strconv.Atoi(categoryID)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Could not convert category ID", http.StatusInternalServerError)
+			return
+		}
+		err = attachCategoryToPosts(catID, int(id))
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Could not attach category to post", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	fmt.Println("Post successfully created!")
@@ -101,29 +136,55 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
+// DEPRECATED
 func GetCookieValue(r *http.Request) (string, string, error) {
 	//- indices represent the split to cookie and value
 	cookie, err := r.Cookie("session")
 	if err != nil {
 		return "", "", err
 	}
-	value := strings.Split(cookie.Value, "&")
 
-	return value[0], value[1], nil
+	// TODO work out what is expected to be in the session
+	return "", cookie.Value, nil
+}
+
+func GetSessionIDFromRequest(r *http.Request) string {
+	cookie, _ := r.Cookie("session")
+	if cookie == nil {
+		return ""
+	}
+	return cookie.Value
 }
 
 // get post ID
 func getPostByID(postID string) (*Post, error) {
 	//added
-	row := DB.QueryRow("SELECT id, title, content, created_at FROM posts WHERE id = ?", postID)
+	// Adjusted the SELECT query to also get the `dislike_count`
+	row := DB.QueryRow("SELECT id, title, content, created_at, likes_count, dislikes_count FROM posts WHERE id = ?", postID)
+	if err := row.Err(); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
 	var post Post
-	err := row.Scan(&post.id, &post.Title, &post.Content, &post.Time)
+	// Added &post.DislikeCount at the end
+	err := row.Scan(&post.ID, &post.Title, &post.Content, &post.Time, &post.LikesCount, &post.DislikeCount)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errors.New("post not found")
 		}
 		return nil, err
 	}
+	// row := DB.QueryRow("SELECT id, title, content, created_at, likes_count FROM posts WHERE id = ?", postID)
+	// var post Post
+	// err := row.Scan(&post.ID, &post.Title, &post.Content, &post.Time, &post.LikesCount)
+	// if err != nil {
+	// 	if err == sql.ErrNoRows {
+	// 		return nil, errors.New("post not found")
+	// 	}
+	// 	return nil, err
+	// }
 	// Format the datetime string
 	t, err := time.Parse("2006-01-02T15:04:05.999999999-07:00", post.Time)
 	if err != nil {
@@ -131,22 +192,47 @@ func getPostByID(postID string) (*Post, error) {
 	}
 	post.Time = t.Format("January 2, 2006, 15:04:05")
 	// make post URLs
-	post.URL = "/post/" + post.id
+	post.URL = "/post/" + post.ID
 	return &post, nil
-
-	//old code below
-
-	// for i := range posts {
-	// 	if posts[i].id == postID {
-	// 		return &posts[i], nil
-	// 	}
-	// }
-	// return nil, errors.New("post not found")
 }
+
+func getCategoriesByPostID(postID int) ([]Category, error) {
+	categories := []Category{}
+	rows, err := DB.Query("SELECT categories.name FROM categories INNER JOIN categories_posts ON categories.id = categories_posts.category_id WHERE categories_posts.post_id = ?", postID)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var category Category
+		err := rows.Scan(&category.Name)
+		if err != nil {
+			return nil, err
+		}
+		categories = append(categories, category)
+	}
+
+	return categories, nil
+}
+
+func getUserIDFromSessionID(sessionID string) (int, error) {
+	var userID int
+	err := DB.QueryRow("SELECT id FROM users WHERE sessionID = ?", sessionID).Scan(&userID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, nil
+		}
+		return 0, fmt.Errorf("failed to get user id from session id: %v", err)
+	}
+
+	return userID, nil
+}
+
 func getCommentsByPostID(postID string) ([]Comment, error) {
 	comments := []Comment{} // creating an empty slice to store comments from the database //i've also added postID and userID to the comment struct
 	rows, err := DB.Query("SELECT user_id, post_id, content, created_at FROM comments WHERE post_id = ?", postID)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
 	defer rows.Close()
@@ -171,7 +257,6 @@ func getCommentsByPostID(postID string) ([]Comment, error) {
 }
 
 func PostPageHandler(w http.ResponseWriter, r *http.Request) {
-
 	// Get post id from the URL path
 	postIDStr := strings.TrimPrefix(r.URL.Path, "/post/")
 
@@ -181,9 +266,6 @@ func PostPageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var comments []Comment
-	// Assuming you have a function to retrieve the logged-in user's ID, if available
-	// If not, you can set it to a default value or handle it as you see fit.
-	// userID := "user1"
 
 	// Get the post data by calling the getPostByID function or fetching it from the database
 	post, err := getPostByID(postIDStr)
@@ -191,6 +273,19 @@ func PostPageHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
+
+	categories, err := getCategoriesByPostID(postID)
+	if err != nil {
+		fmt.Printf("ERR: %s\n", err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	post.Categories = categories
+
+	// Get the likes count from the post variable
+	likesCount := post.LikesCount
+	dislikeCount := post.DislikeCount
+
 	//get comments by postID -
 	comments, err = getCommentsByPostID(postIDStr)
 	if err != nil {
@@ -203,6 +298,8 @@ func PostPageHandler(w http.ResponseWriter, r *http.Request) {
 		PostID   int
 		Post     Post
 		Comments []Comment
+		Likes    int
+		Dislikes int
 		Success  bool // Add the Success field to indicate if the comment was successfully posted
 	}
 
@@ -210,6 +307,11 @@ func PostPageHandler(w http.ResponseWriter, r *http.Request) {
 	data.Post = *post // Use the dereferenced post pointer
 	data.Comments = comments
 	data.Success = r.URL.Query().Get("success") == "1"
+	data.Likes = likesCount
+	data.Dislikes = dislikeCount
+
+	fmt.Println(likesCount, "likes count")
+	fmt.Println(dislikeCount, "dislike count")
 
 	tmpl, err := template.ParseFiles("postPage.html")
 	if err != nil {
@@ -218,10 +320,10 @@ func PostPageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Render the template with the data
+	// ! error flag
 	err = tmpl.ExecuteTemplate(w, "postPage.html", data)
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error - posts", http.StatusInternalServerError)
 		return
 	}
-
 }

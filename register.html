@@ -2,9 +2,15 @@
 <html>
 <head>
     <title>Register</title>
+    <style>
+        a {
+            text-decoration: none;
+        }
+    </style>
 </head>
 <body>
-    <h2>Register</h2>
+    <a href="http://localhost:8080/">
+    <h2>Register</h2></a>
     <form action="/register" method="post">
         <label for="email">Email:</label><br>
         <input type="email" id="email" name="email" required><br>
@@ -13,6 +19,10 @@
         <label for="password">Password:</label><br>
         <input type="password" id="password" name="password" required><br>
         <input type="submit" value="Submit">
+    </form>
+    <h4>Login</h4>
+    <form action="http://localhost:8080/login">
+        <button class="login-button" type="submit">Login</button>
     </form>
 </body>
 </html>

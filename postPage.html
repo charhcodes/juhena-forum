@@ -1,55 +1,41 @@
 <!DOCTYPE html>
 <head>
     <title>{{.Post.Title}}</title>
+    <link rel="stylesheet" type="text/css" href="/style.css">
+    <style>
+        a {
+            text-decoration: none;
+        }
+    </style>
 </head>
 <body>
+    <a href="http://localhost:8080/">
     <h1>my forum</h1>
+</a>
     <!--post details-->
     <div class="postContainer">
-
-<h1>{{ .Post.Title }}</h1>
-<p>{{ .Post.Content }}</p>
-
-<!-- Display the like and dislike counts -->
-<p>Like: {{ .Like }}</p>
-<p>Dislike: {{ .Dislike }}</p>
-
-<!-- Display like and dislike buttons -->
-{{ if .IsLiked }}
-  <button disabled>Like</button>
-{{ else }}
-  <form action="/post-like/{{ .PostID }}" method="post">
-    <input type="hidden" name="action" value="like">
-    <button type="submit">Like</button>
-  </form>
-{{ end }}
-
-{{ if .IsDisliked }}
-  <button disabled>Dislike</button>
-{{ else }}
-  <form action="/post-like/{{ .PostID }}" method="post">
-    <input type="hidden" name="action" value="dislike">
-    <button type="submit">Dislike</button>
-  </form>
-{{ end }}
-
-<!-- Display comments and other post details as needed -->
-
-       
-    </div>
-    
-   
-    <!-- <div class="postContainer">
         <h2>{{.Post.Title}}</h2>
         <p>{{.Post.Content}}</p>
-        <h3>Likes:</h3>
-        <form action="/post-like/{{ .PostID }}" id="like-button" method="POST">
-           <button>Like</button>
+
+        <p>Likes: {{ .Likes }} </p>  
+        <p>Dislikes: {{ .Dislikes }} </p>
+        <p>Categories:
+            {{ range .Post.Categories }}
+                {{ .Name }}
+            {{ end }}
+        </p>
+
+
+        <form action="/post-like/{{ .PostID }}" method="POST">
+            <input type="hidden" name="action" value="like">
+            <button type="submit">Like</button>
         </form>
-        <form action="/post-dislike/{{ .PostID }}" id="dislike-button" method="POST">
-            <button>Dislike</button>
+        <form action="/post-like/{{ .PostID }}" method="POST">
+            <input type="hidden" name="action" value="dislike">
+            <button type="submit">Dislike</button>
         </form>
-    </div> -->
+        
+    </div>
 
     {{ if .Success }}
     <p>Comment successfully posted!</p>
@@ -64,17 +50,20 @@
             <input type="submit" value="Submit Comment">
         </form>
     </div>
-
+    
+    <!-- Capture the post's ID -->
+    {{ $postID := .PostID }}
+    
     <!--comments-->
     <div class="comments-container">
         <h3>Comments:</h3>
-            {{ range .Comments }}
+        {{ range .Comments }}
             <p>{{ .Content }}</p>
-            <form action="/comment-like/{{ .PostID }}" method="POST">
+            <form action="/comment-like/{{ $postID }}" method="POST">
                 <input type="hidden" name="comment-action" value="like">
                 <button type="submit">Like</button>
             </form>
-            <form action="/comment-like/{{ .PostID }}" method="POST">
+            <form action="/comment-like/{{ $postID }}" method="POST">
                 <input type="hidden" name="comment-action" value="dislike">
                 <button type="submit">Dislike</button>
             </form>

@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// getCommentPostID get the post id from the URL
 func getCommentPostID(w http.ResponseWriter, r *http.Request) int {
 	// Extract post ID from URL
 	postIDStr := strings.TrimPrefix(r.URL.Path, "/comment-like/")
@@ -34,17 +35,23 @@ func getCommentID(postID int) (int, error) {
 }
 
 func CommentLikesHandler(w http.ResponseWriter, r *http.Request) {
-	checkCookies(w, r)
+	sessionID := GetSessionIDFromRequest(r)
+	if sessionID == "" {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
 
 	postID = getCommentPostID(w, r)
-	fmt.Println(postID)
-	userID = getUserID(w, r)
-	fmt.Println(userID)
+	userID, err := getUserIDFromSessionID(sessionID)
+	if err != nil {
+		http.Error(w, "Error getting session ID", http.StatusInternalServerError)
+		return
+	}
+
 	commentID, err := getCommentID(postID)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(commentID)
 
 	r.ParseForm()
 	action := r.FormValue("comment-action")
@@ -79,7 +86,7 @@ func CommentLikesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // check if user has previously liked or disliked a comment
-func checkCommentLikeDislike(userID string, postID int, commentID int) (liked bool, disliked bool, err error) {
+func checkCommentLikeDislike(userID int, postID int, commentID int) (liked bool, disliked bool, err error) {
 	// check user id, post id and comment id for whether they've previously liked or disliked the post
 	row := DB.QueryRow("SELECT COUNT(*) FROM reactions WHERE user_id = ? AND post_id = ? AND comment_id = ? AND type = 1", userID, postID, commentID)
 	var likeCount int
@@ -110,7 +117,7 @@ func checkCommentLikeDislike(userID string, postID int, commentID int) (liked bo
 	return liked, disliked, nil
 }
 
-func addCommentLike(userID string, postID int, commentID int) error {
+func addCommentLike(userID int, postID int, commentID int) error {
 	fmt.Println("addCommentLike function triggered")
 	existingLike, existingDislike, err := checkCommentLikeDislike(userID, postID, commentID)
 	if err != nil {
@@ -142,7 +149,7 @@ func addCommentLike(userID string, postID int, commentID int) error {
 	return nil
 }
 
-func addCommentDislike(userID string, postID int, commentID int) error {
+func addCommentDislike(userID int, postID int, commentID int) error {
 	existingLike, existingDislike, err := checkCommentLikeDislike(userID, postID, commentID)
 	if err != nil {
 		return err

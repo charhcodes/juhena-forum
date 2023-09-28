@@ -1,9 +1,15 @@
 <!DOCTYPE html>
 <head>
     <title>create post</title>
+    <style>
+        a {
+            text-decoration: none;
+        }
+    </style>
 </head>
 <body>
-    <h1>create post</h1>
+    <a href="http://localhost:8080/">
+    <h1>create post</h1></a>
     <form method="POST" action="/create-post">
         <label for="post-title">Post Title:</label>
         <textarea id="post-title" name="postTitle" rows="1" cols="50"></textarea>
@@ -12,23 +18,10 @@
         <br>
         <!-- add post categories -->
         <div class="categories">
-            <input type="checkbox" id="lifestyle" name="checkboxes" value="lifestyle">
-            <label for="checkbox1">Lifestyle</label><br>
-          
-            <input type="checkbox" id="news" name="checkboxes" value="news">
-            <label for="checkbox2">News</label><br>
-          
-            <input type="checkbox" id="gaming" name="checkboxes" value="gaming">
-            <label for="checkbox3">Gaming</label><br>
-
-            <input type="checkbox" id="fashion" name="checkboxes" value="fashion">
-            <label for="checkbox4">Fashion</label><br>
-
-            <input type="checkbox" id="music" name="checkboxes" value="music">
-            <label for="checkbox5">Music</label><br>
-
-            <input type="checkbox" id="tv-movies" name="checkboxes" value="tv-movies">
-            <label for="checkbox6">TV/Movies</label><br>
+            {{range .Categories}}
+                <input type="checkbox" id="{{ .Name }}" name="postCategories" value="{{ .ID }}">
+                <label for="{{ .Name }}">{{ .Name }}</label><br>
+            {{end}}
         </div>
         <input type="submit" value="Submit">
     </form>
