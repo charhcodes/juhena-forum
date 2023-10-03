@@ -105,7 +105,6 @@ func GetCookieValue(r *http.Request) (string, string, error) {
 
 // get post ID
 func getPostByID(postID string) (*Post, error) {
-	//added
 	// Adjusted the SELECT query to also get the `dislike_count`
 	row := DB.QueryRow("SELECT id, title, content, created_at, likes_count, dislikes_count FROM posts WHERE id = ?", postID)
 	var post Post

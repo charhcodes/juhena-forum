@@ -15,7 +15,7 @@ func getPostID(w http.ResponseWriter, r *http.Request) (int, error) {
 	postIDStr := strings.TrimPrefix(r.URL.Path, "/post-like/")
 	postID, err := strconv.Atoi(postIDStr)
 	if err != nil { //added JB
-		return 0, fmt.Errorf("Invalid post ID: %w", err)
+		return 0, fmt.Errorf("invalid post ID: %w", err)
 	}
 	return postID, nil
 

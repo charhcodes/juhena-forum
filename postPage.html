@@ -58,7 +58,7 @@
             <form action="/comment-like/{{ $postID }}" method="POST">
                 <input type="hidden" name="comment-action" value="dislike">
                 <input type="text" name="reaction-id" hidden value={{.CommentID}} >
-                <button type="submit" value={{.CommentID}}>Dislike </button>
+                <button type="submit" >Dislike </button>
             </form>
             <p>Posted at: {{ .Time }}</p>
         {{ end }}
