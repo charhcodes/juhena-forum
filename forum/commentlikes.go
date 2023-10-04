@@ -35,6 +35,7 @@ func getCommentID(postID int) (int, error) {
 }
 
 func CommentLikesHandler(w http.ResponseWriter, r *http.Request) {
+	postID := getCommentPostID(w, r)
 	sessionID := GetSessionIDFromRequest(r)
 	if sessionID == "" {
 		http.Redirect(w, r, "/login", http.StatusFound)
@@ -146,6 +147,11 @@ func addCommentLike(userID int, postID int, commentID int) error {
 		}
 		fmt.Println("Added Like")
 	}
+	// Update total likes and dislikes counts in the comments table
+	err = addTotalLikesCommentDislikes(userID, postID, commentID)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -177,5 +183,55 @@ func addCommentDislike(userID int, postID int, commentID int) error {
 		}
 		fmt.Println("Added Dislike")
 	}
+	// Update total likes and dislikes counts in the comments table
+	err = addTotalLikesCommentDislikes(userID, postID, commentID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// create a function to add total likes from the database postlikes table
+func getTotalCommentLikes(userID int, postID int, commentID int) (int, error) {
+	//from the postlikes table, get the total number of likes for a post
+	row := DB.QueryRow("SELECT COUNT(*) FROM reactions WHERE comment_id = ? AND type = 1", postID, commentID, userID)
+	var likeCount int
+	if err := row.Scan(&likeCount); err != nil {
+		return 0, err
+	}
+	return likeCount, nil
+}
+
+// create a function to add total dislikes from the database postlikes table
+func getTotalCommentDislikes(userID int, postID int, commentID int) (int, error) {
+	//from the postlikes table, get the total number of dislikes for a post
+	row := DB.QueryRow("SELECT COUNT(*) FROM reactions WHERE comment_id = ? AND type = -1", postID, commentID, userID)
+	var dislikeCount int
+	if err := row.Scan(&dislikeCount); err != nil {
+		return 0, err
+	}
+	return dislikeCount, nil
+}
+
+// Add total likes and dislikes to the comments table
+func addTotalLikesCommentDislikes(userID int, postID int, commentID int) error {
+	// Get the total number of likes for a comment
+	likeCount, err := getTotalCommentLikes(postID, commentID, userID)
+	if err != nil {
+		return err
+	}
+
+	// Get the total number of dislikes for a comment
+	dislikeCount, err := getTotalCommentDislikes(postID, commentID, userID)
+	if err != nil {
+		return err
+	}
+
+	// Update the likes_count and dislikes_count columns in the comments table
+	_, err = DB.Exec("UPDATE reactions SET likes_count = ?, dislikes_count = ? WHERE id = ?", likeCount, dislikeCount, commentID)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

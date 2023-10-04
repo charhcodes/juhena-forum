@@ -81,25 +81,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-// func removeOldSession(sessionCookieValue string) {
-// 	// Split the sessionCookieValue to get the session ID
-// 	parts := strings.Split(sessionCookieValue, "&")
-// 	if len(parts) != 2 {
-// 		// Invalid session cookie format
-// 		return
-// 	}
-
-// 	sessionID := parts[0]
-
-// 	// Implement code to remove or invalidate the old session in your database
-// 	query := "DELETE FROM Users WHERE SessionID = ?"
-// 	_, err := DB.Exec(query, sessionID)
-// 	if err != nil {
-// 		// Handle the error, e.g., log it
-// 		log.Println("Error removing old session:", err)
-// 	}
-// }
-
+// handle login + session cookies
 // handle login + session cookies
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	// Check if the user already has an active session
@@ -117,11 +99,6 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Method == http.MethodGet {
-		http.ServeFile(w, r, "login.html")
-		return
-	}
-
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, "Could not parse form", http.StatusBadRequest)
@@ -132,6 +109,22 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	password := r.Form.Get("password")
 	if email == "" || password == "" {
 		http.Error(w, "Please fill out all fields", http.StatusBadRequest)
+		return
+	}
+
+	// Check if the user already has an active session
+	query := "SELECT SessionID FROM Users WHERE Email = ?"
+	var activeSessionID string
+	err = DB.QueryRow(query, email).Scan(&activeSessionID)
+	if err != nil && err != sql.ErrNoRows {
+		log.Println(err)
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+
+	// If an active session ID exists for the user, reject the login
+	if activeSessionID != "" {
+		http.Error(w, "You are already logged in from another browser.", http.StatusForbidden)
 		return
 	}
 
@@ -154,36 +147,13 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// check if sessionID already exists
-	// query := "SELECT COUNT(*) FROM Users WHERE Email = ? AND sessionID = ?"
-
-	// var count int
-	// err = DB.QueryRow(query, email, newSessionID).Scan(&count)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return
-	// }
-
-	// // if sessionID already exists, user stays logged in
-	// if count > 0 {
-	// 	fmt.Printf("SessionID '%s' exists for Email '%s'\n", newSessionID, email)
-	// } else { // if sessionID does not exist, user is logged out
-	// 	fmt.Printf("SessionID '%s' does not exist for Email '%s'\n", newSessionID, email)
-	// }
-
-	// insert session ID into database
+	// Insert the new session ID into the database
 	_, err = DB.Exec("UPDATE Users SET SessionID = ? WHERE Email = ?", newSessionID, email)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	// // Set browser cookies to store login
-	// http.SetCookie(w, &http.Cookie{
-	// 	Name:  "user",
-	// 	Value: email,
-	// })
 
 	// Store the new session ID in a cookie
 	http.SetCookie(w, &http.Cookie{
@@ -195,20 +165,6 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Redirect the user to the homepage
 	http.Redirect(w, r, "/", http.StatusFound)
-
-	// // Create a new cookie with the session ID
-	// cookie := http.Cookie{
-	// 	Name:    "session",
-	// 	Value:   newSessionID + "&" + strconv.Itoa(userId),
-	// 	Expires: time.Now().Add(1 * time.Hour), // Extend cookie expiration time
-	// 	Path:    "/",
-	// }
-
-	// Set the cookie in the response headers
-	// http.SetCookie(w, &cookie)
-
-	// Redirect the user to the homepage
-	// http.Redirect(w, r, "/", http.StatusFound)
 }
 
 // handle logging out
